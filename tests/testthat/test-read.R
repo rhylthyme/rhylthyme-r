@@ -25,7 +25,8 @@ test_that("read_rhylthyme keeps the original JSON", {
 })
 
 test_that("read_rhylthyme explains bad input", {
-  expect_error(read_rhylthyme(c("a", "b")), "path to a Rhylthyme program")
+  expect_error(read_rhylthyme(c("a", "b")), "path, URL or JSON string, or a list")
+  expect_error(read_rhylthyme(42), "path, URL or JSON string, or a list")
   expect_error(read_rhylthyme(tempfile(fileext = ".json")), "No such file")
   bad <- withr::local_tempfile(fileext = ".json")
   writeLines("{not json", bad)

@@ -1,6 +1,7 @@
 estimates_program <- function() {
   list(
     schemaVersion = "0.2.0-alpha", programId = "estimates", name = "Estimates",
+    resourceConstraints = list(),
     tracks = list(list(
       trackId = "bench", name = "Bench",
       steps = list(
@@ -47,7 +48,7 @@ test_that("replicates expand to one row per instance with the engine's ids", {
 })
 
 test_that("an empty program gives an empty table with every column", {
-  s <- read_rhylthyme(program_file(list(name = "Empty", tracks = list())))$steps
+  s <- read_rhylthyme(program_file(list(name = "Empty", tracks = list())), validate = FALSE)$steps
   expect_equal(nrow(s), 0)
   expect_true(all(c("start", "end", "duration", "estimate", "instance_of") %in% names(s)))
 })

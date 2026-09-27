@@ -4,22 +4,34 @@
 \alias{read_rhylthyme}
 \title{Read a Rhylthyme program}
 \usage{
-read_rhylthyme(x)
+read_rhylthyme(x, validate = TRUE)
 }
 \arguments{
-\item{x}{Path to a program JSON file.}
+\item{x}{The program: a path to a JSON file, an \verb{http(s)://} URL, a JSON
+string, or a list (as from \code{\link[jsonlite:read_json]{jsonlite::read_json()}}, or built in R; a
+length-one vector becomes a JSON scalar, so wrap a one-element array in
+\code{\link[=list]{list()}} or \code{\link[=I]{I()}}).}
+
+\item{validate}{If \code{TRUE}, the default, a program that breaks the schema is
+an error listing every problem (see \code{\link[=validate_rhylthyme]{validate_rhylthyme()}}). \code{FALSE}
+reads it anyway, for drafts; steps are then timed as far as the engine
+can.}
 }
 \value{
 A \code{rhylthyme_program}: a list with the program's \code{name},
 \code{description}, \code{schema_version}, \code{source}, a \code{steps} data frame (one row
 per step, with \code{start} and \code{end} in seconds from program start), the
-parsed \code{program} and its original \code{json} text.
+parsed \code{program} and its \code{json} text.
 }
 \description{
-Reads a Rhylthyme program (JSON) and times every step with the same
-engine rhylthyme.com uses.
+Reads a Rhylthyme program (JSON), checks it against the program schema and
+times every step with the same engine rhylthyme.com uses.
 }
 \examples{
 p <- read_rhylthyme(system.file("extdata", "breakfast_schedule.json", package = "rhylthyme"))
 p
+read_rhylthyme('{"programId": "tea", "name": "Tea", "resourceConstraints": [],
+  "tracks": [{"trackId": "kettle", "name": "Kettle",
+  "steps": [{"stepId": "boil", "name": "Boil", "duration": {"type": "fixed", "seconds": 180},
+  "startTrigger": {"type": "programStart"}}]}]}')
 }
