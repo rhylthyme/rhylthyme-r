@@ -16,22 +16,27 @@ engine <- function() {
 }
 
 # One row per step (replicate instances included), in authored track and
-# step order, with the engine's start and end in seconds from program start.
+# step order, with the engine's start and end in seconds from program start,
+# how its duration is known (duration_type), whether that is an estimate, and
+# for a replicate instance the authored step it came from and its index.
 engine_steps <- function(json) {
   rows <- engine()$call("RhylthymeR.stepsFromJson", json)
   columns <- list(
     track_id = character(), track_name = character(), track_index = integer(),
     step_id = character(), name = character(), start = numeric(),
-    end = numeric(), resolved = logical()
+    end = numeric(), resolved = logical(), duration_type = character(),
+    estimate = logical(), instance_of = character(), instance_index = integer()
   )
-  if (length(rows) == 0) {
-    return(as.data.frame(columns, stringsAsFactors = FALSE))
+  steps <- if (length(rows)) {
+    as.data.frame(rows, stringsAsFactors = FALSE)
+  } else {
+    as.data.frame(columns, stringsAsFactors = FALSE)
   }
-  steps <- as.data.frame(rows, stringsAsFactors = FALSE)
   for (col in names(columns)) {
-    if (is.null(steps[[col]])) steps[[col]] <- NA
+    if (is.null(steps[[col]])) steps[[col]] <- rep(NA, nrow(steps))
     storage.mode(steps[[col]]) <- storage.mode(columns[[col]])
   }
   steps$duration <- steps$end - steps$start
-  steps[c(names(columns)[1:7], "duration", "resolved")]
+  first <- names(columns)[1:7]
+  steps[c(first, "duration", setdiff(names(columns), first))]
 }

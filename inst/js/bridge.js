@@ -5,6 +5,25 @@
 var RhylthymeR = (function () {
   'use strict';
 
+  // How the step's planning duration is known. "instrument": an instrument
+  // step with no authored duration (the engine estimates it).
+  function durationType(step) {
+    if (Rhylthyme.instrumentEstimate(step)) return 'instrument';
+    var d = step.duration;
+    if (typeof d === 'string' || typeof d === 'number') return 'fixed';
+    if (d && typeof d === 'object') return d.type ? String(d.type) : 'fixed';
+    return null;
+  }
+
+  // The planned length is a guess rather than authored: the renderer's
+  // dotted-outline rule (instrument estimate, or filled in by `rhylthyme
+  // plan`), plus indefinite steps, which plan with a placeholder.
+  function isEstimate(step) {
+    return !!Rhylthyme.instrumentEstimate(step)
+      || !!(step.metadata && step.metadata.durationEstimate)
+      || !!(step.duration && step.duration.type === 'indefinite');
+  }
+
   function steps(program) {
     var expanded = Rhylthyme.expandReplicates(program);
     var timings = Rhylthyme.computeStepTimings(program);
@@ -23,7 +42,11 @@ var RhylthymeR = (function () {
           name: step.name ? String(step.name) : String(step.stepId),
           start: typeof t.start === 'number' ? t.start : null,
           end: typeof t.end === 'number' ? t.end : null,
-          resolved: t.resolved === true
+          resolved: t.resolved === true,
+          duration_type: durationType(step),
+          estimate: isEstimate(step),
+          instance_of: step.instanceOf == null ? null : String(step.instanceOf),
+          instance_index: typeof step.instanceIndex === 'number' ? step.instanceIndex : null
         });
       });
     });
