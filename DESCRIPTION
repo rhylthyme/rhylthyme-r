@@ -1,0 +1,29 @@
+Package: rhylthyme
+Title: Read and Plot 'Rhylthyme' Schedules with 'ggplot2'
+Version: 0.0.0.9000
+Authors@R:
+    person("Jeremy", "Leipzig", email = "leipzig@gmail.com", role = c("aut", "cre"))
+Description: Reads 'Rhylthyme' programs (JSON descriptions of parallel
+    tracks of timed steps: recipes, lab protocols, run-of-shows) and plots
+    them as Gantt charts with 'ggplot2'. Step times come from the same
+    timing engine that <https://www.rhylthyme.com> uses, embedded through
+    'V8', so a plot agrees with the website to the second.
+License: Apache License (>= 2)
+URL: https://github.com/rhylthyme/rhylthyme-r, https://www.rhylthyme.com
+BugReports: https://github.com/rhylthyme/rhylthyme-r/issues
+Depends:
+    R (>= 4.1)
+Imports:
+    ggplot2 (>= 3.5.0),
+    jsonlite,
+    utils,
+    V8
+Suggests:
+    testthat (>= 3.0.0),
+    rlang,
+    vdiffr,
+    withr
+Config/testthat/edition: 3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.1.0
