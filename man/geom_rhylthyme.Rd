@@ -87,7 +87,9 @@ to use \code{position_jitter()}, give the position as \code{"jitter"}.
 \item{...}{Other arguments passed on to \code{\link[ggplot2:layer]{ggplot2::layer()}}, such as
 \code{colour = "white"}.}
 
-\item{arrows}{Draw dependency arrows between lanes. Solid for a step that
+\item{arrows}{Draw dependency arrows between lanes, as curves the way
+rhylthyme.com draws them: a sweep into the waiting step's start, or an
+S-curve between the two bars when they are close. Solid for a step that
 waits for another; dashed when it starts before the other ends (a
 negative offset); dotted for a step that runs only if the other aborts.}
 

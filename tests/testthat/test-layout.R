@@ -16,42 +16,58 @@ test_that("bars fill 0.8 of their lane", {
   expect_equal(c(b$ymin, b$ymax), c(1.6, 2.4))
 })
 
-test_that("an end-to-start arrow with a gap is an elbow into the waiting step", {
+test_that("an arrow runs from the waiting-on step's end to the waiting step's start", {
   # a (top lane, y = 2) ends at 10; b (y = 1) starts at 15.
   a <- layout_arrows(bars(list("a", 0, 10, 2), list("b", 15, 20, 1)), deps("a", "b"))
-  expect_equal(a$x, c(10, 10, 15))
-  expect_equal(a$y, c(1.6, 1, 1)) # from a's lower edge, down to b's lane, across
+  expect_equal(c(a$x0, a$x1), c(10, 15))
+  expect_equal(c(a$y0_mid, a$y1_mid), c(2, 1))
+  # the edges that face each other: a's lower edge, b's upper edge
+  expect_equal(c(a$y0_edge, a$y1_edge), c(1.6, 1.4))
 })
 
-test_that("with no gap the arrow drops straight onto the waiting step", {
-  a <- layout_arrows(bars(list("a", 0, 10, 2), list("b", 10, 20, 1)), deps("a", "b"))
-  expect_equal(a$x, c(10, 10))
-  expect_equal(a$y, c(1.6, 1.4))
-})
-
-test_that("a hand-off (negative offset) drops at the waiting step's start", {
-  a <- layout_arrows(bars(list("a", 0, 10, 2), list("b", 7, 20, 1)), deps("a", "b", offset = -3))
-  expect_equal(a$x, c(7, 7))
-  expect_equal(a$offset[1], -3)
-})
-
-test_that("start-to-start arrows leave the other step's start", {
+test_that("start-to-start arrows leave the other step's start; upward arrows use the upper edge", {
   a <- layout_arrows(bars(list("a", 0, 10, 2), list("b", 5, 20, 1)),
                      deps("a", "b", relation = "start_to_start", offset = 5))
-  expect_equal(a$x, c(0, 0, 5))
-})
-
-test_that("arrows go up as well as down", {
+  expect_equal(a$x0, 0)
   a <- layout_arrows(bars(list("a", 0, 10, 1), list("b", 15, 20, 2)), deps("a", "b"))
-  expect_equal(a$y, c(1.4, 2, 2)) # from a's upper edge
+  expect_equal(c(a$y0_edge, a$y1_edge), c(1.4, 1.6))
 })
 
 test_that("steps in one lane, and steps not drawn, get no arrow", {
   b <- bars(list("a", 0, 10, 1), list("b", 10, 20, 1), list("c", 20, 30, 2))
   a <- layout_arrows(b, rbind(deps("a", "b"), deps("b", "c"), deps("x", "c"), deps("c", "gone")))
-  expect_equal(unique(a$from_step), "b")
-  expect_equal(unique(a$arrow), 1)
+  expect_equal(a$from_step, "b")
   expect_equal(nrow(layout_arrows(b, NULL)), 0)
+})
+
+anchors <- function(x0, x1, y0 = 2, y1 = 1, half = 0.25) {
+  down <- y1 < y0
+  data.frame(arrow = 1, x0 = x0, x1 = x1, y0_mid = y0, y1_mid = y1,
+             y0_edge = if (down) y0 - half else y0 + half,
+             y1_edge = if (down) y1 + half else y1 - half)
+}
+
+test_that("a forward hop is a Bezier that leaves level and sweeps into the bar", {
+  # 2 inches apart: handles reach 60% of the gap, clamped at 120 px (1.25 in)
+  c <- arrow_curves(anchors(x0 = 1, x1 = 3))
+  expect_equal(unique(c$shape), "forward")
+  gap <- 3 / 96
+  expect_equal(c$x, c(1, 1 + 1.2, 3 - gap - 1.2, 3 - gap))
+  expect_equal(c$y, c(2, 2, 1, 1))
+  far <- arrow_curves(anchors(x0 = 1, x1 = 6))
+  expect_equal(far$x[2] - far$x[1], 120 / 96)
+})
+
+test_that("a short hop or a hand-off is an S-curve between the facing edges", {
+  c <- arrow_curves(anchors(x0 = 1, x1 = 1.2))
+  expect_equal(unique(c$shape), "drop")
+  expect_equal(c$x, c(1, 1, 1.2, 1.2))
+  expect_equal(c$y[c(1, 4)], c(1.75, 1.25))
+  # handles reach half the vertical distance, at least 12 px
+  expect_equal(c$y[2], 1.75 - max(12 / 96, 0.25))
+  back <- arrow_curves(anchors(x0 = 2, x1 = 1.5))
+  expect_equal(unique(back$shape), "drop")
+  expect_equal(back$x[4], 1.5)
 })
 
 label_bars <- function() {

@@ -45,9 +45,9 @@
 <rect x='97.13' y='120.72' width='38.03' height='65.29' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #10B981;' />
 <rect x='135.16' y='283.95' width='380.29' height='65.29' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #10B981;' />
 <rect x='401.36' y='381.88' width='133.10' height='130.58' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #F59E0B;' />
-<polyline points='135.16,120.72 135.16,218.66 ' style='stroke-width: 0.96; stroke: #4D4D4D;' />
+<polyline points='135.16,120.72 135.16,127.09 135.16,132.93 135.16,138.33 135.16,143.38 135.16,148.13 135.16,152.64 135.16,156.97 135.16,161.15 135.16,165.24 135.16,169.28 135.16,173.32 135.16,177.40 135.16,181.56 135.16,185.85 135.16,190.32 135.16,195.02 135.16,200.00 135.16,205.33 135.16,211.08 135.16,217.33 135.16,218.66 ' style='stroke-width: 0.96; stroke: #4D4D4D;' />
 <polygon points='132.89,214.73 135.16,218.66 137.43,214.73 ' style='stroke-width: 0.96; stroke: #4D4D4D; fill: #4D4D4D;' />
-<polyline points='135.16,186.01 135.16,283.95 ' style='stroke-width: 0.96; stroke: #4D4D4D;' />
+<polyline points='135.16,186.01 135.16,192.38 135.16,198.22 135.16,203.62 135.16,208.67 135.16,213.42 135.16,217.93 135.16,222.26 135.16,226.44 135.16,230.53 135.16,234.58 135.16,238.61 135.16,242.69 135.16,246.85 135.16,251.14 135.16,255.61 135.16,260.31 135.16,265.30 135.16,270.62 135.16,276.37 135.16,282.62 135.16,283.95 ' style='stroke-width: 0.96; stroke: #4D4D4D;' />
 <polygon points='132.89,280.02 135.16,283.95 137.43,280.02 ' style='stroke-width: 0.96; stroke: #4D4D4D; fill: #4D4D4D;' />
 <text x='138.56' y='91.01' style='font-size: 8.54px; fill: #262626; font-family: sans;' textLength='86.36px' lengthAdjust='spacingAndGlyphs'>Crack and Whisk Eggs</text>
 <text x='138.56' y='254.24' style='font-size: 8.54px; fill: #FFFFFF; font-family: sans;' textLength='35.59px' lengthAdjust='spacingAndGlyphs'>Heat Pan</text>

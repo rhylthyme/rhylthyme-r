@@ -58,7 +58,7 @@ test_that("a set plots in one panel with every lane, or faceted by program", {
 test_that("arrows never join steps of different programs", {
   one <- panel_grob(ggplot2::ggplot(compound()) + geom_rhylthyme())
   two <- panel_grob(ggplot2::ggplot(c(compound(), compound())) + geom_rhylthyme())
-  expect_equal(length(unique(two$arrows$id)), 2 * length(unique(one$arrows$id)))
+  expect_equal(nrow(two$arrows$anchors), 2 * nrow(one$arrows$anchors))
 })
 
 test_that("anchoring must be all or none", {

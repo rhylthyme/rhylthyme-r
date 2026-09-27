@@ -35,8 +35,8 @@
 <rect x='109.83' y='381.88' width='121.04' height='130.58' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #F59E0B;' />
 <rect x='230.87' y='381.88' width='48.41' height='130.58' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #F59E0B;' />
 <rect x='170.35' y='55.43' width='363.11' height='130.58' style='stroke-width: 1.28; stroke: #262626; stroke-dasharray: 1.71,5.12; stroke-linecap: butt; stroke-linejoin: miter;' />
-<polyline points='412.42,186.01 412.42,218.66 ' style='stroke-width: 0.96; stroke: #4D4D4D; stroke-dasharray: 5.12,5.12;' />
-<polygon points='410.15,214.73 412.42,218.66 414.69,214.73 ' style='stroke-width: 0.96; stroke: #4D4D4D; stroke-dasharray: 5.12,5.12; fill: #4D4D4D;' />
+<polyline points='533.46,186.01 532.85,187.90 531.09,189.64 528.23,191.27 524.35,192.80 519.52,194.24 513.83,195.61 507.39,196.93 500.29,198.19 492.68,199.43 484.69,200.63 476.48,201.83 468.20,203.01 460.01,204.21 452.06,205.42 444.52,206.66 437.51,207.93 431.17,209.25 425.60,210.63 420.91,212.09 417.17,213.63 414.47,215.27 412.86,217.04 412.42,218.66 ' style='stroke-width: 0.96; stroke: #4D4D4D; stroke-dasharray: 5.12,5.12;' />
+<polygon points='411.27,214.27 412.42,218.66 415.64,215.47 ' style='stroke-width: 0.96; stroke: #4D4D4D; stroke-dasharray: 5.12,5.12; fill: #4D4D4D;' />
 <text x='173.75' y='123.66' style='font-size: 8.54px; fill: #FFFFFF; font-family: sans;' textLength='45.07px' lengthAdjust='spacingAndGlyphs'>Slow Braise</text>
 <text x='415.82' y='286.89' style='font-size: 8.54px; fill: #1A1A1A; font-family: sans;' textLength='83.99px' lengthAdjust='spacingAndGlyphs'>Make Finishing Sauce</text>
 <text x='113.23' y='450.11' style='font-size: 8.54px; fill: #1A1A1A; font-family: sans;' textLength='39.38px' lengthAdjust='spacingAndGlyphs'>Cook Rice</text>

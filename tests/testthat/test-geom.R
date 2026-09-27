@@ -51,12 +51,12 @@ test_that("a program plots as a timeline", {
 test_that("a program's dependencies between lanes are drawn as arrows", {
   p <- read_rhylthyme(test_path("fixtures", "programs", "compound_each_pairing.json"))
   g <- panel_grob(ggplot2::ggplot(p) + geom_rhylthyme())
-  expect_s3_class(g$arrows, "polyline")
+  expect_s3_class(g$arrows, "rhylthyme_arrows")
   lanes <- ggplot2::fortify(p)
   lane_of <- stats::setNames(as.character(lanes$lane), lanes$step_id)
   d <- dependencies(p)
   crossing <- sum(lane_of[d$from_step] != lane_of[d$to_step])
-  expect_equal(length(unique(g$arrows$id)), crossing)
+  expect_equal(nrow(g$arrows$anchors), crossing)
 
   g <- panel_grob(ggplot2::ggplot(p) + geom_rhylthyme(arrows = FALSE))
   expect_null(g$arrows)
@@ -78,7 +78,7 @@ test_that("your own data can bring its own dependencies", {
   plot <- ggplot2::ggplot(df, ggplot2::aes(xmin = s, xmax = e, y = lane, step = id, label = id)) +
     geom_rhylthyme(dependencies = data.frame(from_step = "a", to_step = "b", relation = "end_to_start", offset = 10))
   g <- panel_grob(plot)
-  expect_equal(length(unique(g$arrows$id)), 1)
+  expect_equal(nrow(g$arrows$anchors), 1)
 })
 
 test_that("arrows and labels look right", {

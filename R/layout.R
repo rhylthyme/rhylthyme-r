@@ -65,22 +65,22 @@ layout_bars <- function(data, bar_height = 0.8) {
   data
 }
 
-# Dependency arrows between bars, as paths in data coordinates: one row per
-# point, `arrow` numbering the paths in order. `bars` has one row per step
-# (`step`, `xmin`, `xmax`, `y`, `ymin`, `ymax`); `dependencies` has
-# `from_step`, `to_step`, `relation` and `offset`, as dependencies() gives.
+# Dependency arrows between bars: the two ends of each, in data coordinates.
+# `bars` has one row per step (`step`, `xmin`, `xmax`, `y`, `ymin`, `ymax`);
+# `dependencies` has `from_step`, `to_step`, `relation` and `offset`, as
+# dependencies() gives. Like the web timeline, only dependencies between
+# lanes are drawn (steps in one lane already follow each other).
 #
-# Like the web timeline, only dependencies between lanes are drawn (steps in
-# one lane already follow each other). An arrow leaves the waiting-on step's
-# end (its start, for start_to_start) on the edge facing the other lane,
-# runs to that lane and ends at the waiting step's start. When the waiting
-# step starts at or before that point (a hand-off, or a zero gap) the arrow
-# is a straight drop onto the bar.
+# Returns one row per arrow: `x0` (the waiting-on step's end, or its start
+# for start_to_start), `x1` (the waiting step's start), each bar's lane
+# centre (`y0_mid`, `y1_mid`) and the edge of each bar that faces the other
+# (`y0_edge`, `y1_edge`). arrow_curves() turns them into curves once the
+# drawn size is known.
 layout_arrows <- function(bars, dependencies) {
-  empty <- data.frame(arrow = integer(), x = numeric(), y = numeric(),
-                      from_step = character(), to_step = character(),
-                      relation = character(), offset = numeric(),
-                      stringsAsFactors = FALSE)
+  empty <- data.frame(arrow = integer(), from_step = character(), to_step = character(),
+                      relation = character(), offset = numeric(), x0 = numeric(),
+                      y0_mid = numeric(), y0_edge = numeric(), x1 = numeric(),
+                      y1_mid = numeric(), y1_edge = numeric(), stringsAsFactors = FALSE)
   if (is.null(dependencies) || !nrow(dependencies) || is.null(bars$step) || !nrow(bars)) {
     return(empty)
   }
@@ -90,27 +90,55 @@ layout_arrows <- function(bars, dependencies) {
   keep[keep] <- bars$y[from[keep]] != bars$y[to[keep]]
   if (!any(keep)) return(empty)
   deps <- dependencies[keep, , drop = FALSE]
-  from <- bars[from[keep], , drop = FALSE]
-  to <- bars[to[keep], , drop = FALSE]
+  f <- bars[from[keep], , drop = FALSE]
+  t <- bars[to[keep], , drop = FALSE]
+  down <- t$y < f$y
+  data.frame(
+    arrow = seq_len(nrow(deps)),
+    from_step = deps$from_step, to_step = deps$to_step,
+    relation = deps$relation, offset = deps$offset,
+    x0 = ifelse(deps$relation %in% "start_to_start", f$xmin, f$xmax),
+    y0_mid = (f$ymin + f$ymax) / 2,
+    y0_edge = ifelse(down, f$ymin, f$ymax),
+    x1 = t$xmin,
+    y1_mid = (t$ymin + t$ymax) / 2,
+    y1_edge = ifelse(down, t$ymax, t$ymin),
+    stringsAsFactors = FALSE
+  )
+}
 
-  paths <- lapply(seq_len(nrow(deps)), function(i) {
-    f <- from[i, ]
-    t <- to[i, ]
-    down <- t$y < f$y
-    x0 <- if (identical(deps$relation[i], "start_to_start")) f$xmin else f$xmax
-    y0 <- if (down) f$ymin else f$ymax
-    if (t$xmin > x0) {
-      x <- c(x0, x0, t$xmin)
-      y <- c(y0, t$y, t$y)
+# Cubic Bezier control points for each arrow, as the web timeline draws
+# them, in absolute units (inches; the thresholds are the web's pixel sizes
+# at 96 dpi). A forward hop (the waiting step starts at least `threshold`
+# after the other's end) leaves the bar level with its centre and sweeps
+# into the waiting bar from the left, its handles reaching 60% of the gap
+# (clamped to `reach`). Anything shorter, or a hand-off before the other
+# step ends, is an S-curve from the edge facing the other lane into the
+# waiting bar's edge. Returns four rows per arrow (`arrow`, `x`, `y`, `shape`).
+arrow_curves <- function(a, threshold = 40 / 96, reach = c(28, 120) / 96,
+                         reach_y = 12 / 96, gap = 3 / 96) {
+  if (!nrow(a)) {
+    return(data.frame(arrow = integer(), x = numeric(), y = numeric(), shape = character()))
+  }
+  rows <- lapply(seq_len(nrow(a)), function(i) {
+    r <- a[i, ]
+    dx <- r$x1 - r$x0
+    if (dx >= threshold) {
+      xe <- r$x1 - gap
+      h <- min(max(dx * 0.6, reach[1]), reach[2])
+      x <- c(r$x0, r$x0 + h, xe - h, xe)
+      y <- c(r$y0_mid, r$y0_mid, r$y1_mid, r$y1_mid)
+      shape <- "forward"
     } else {
-      x <- c(t$xmin, t$xmin)
-      y <- c(y0, if (down) t$ymax else t$ymin)
+      dir <- sign(r$y1_edge - r$y0_edge)
+      h <- max(reach_y, abs(r$y1_edge - r$y0_edge) * 0.5)
+      x <- c(r$x0, r$x0, r$x1, r$x1)
+      y <- c(r$y0_edge, r$y0_edge + dir * h, r$y1_edge - dir * h, r$y1_edge)
+      shape <- "drop"
     }
-    data.frame(arrow = i, x = x, y = y, from_step = deps$from_step[i],
-               to_step = deps$to_step[i], relation = deps$relation[i],
-               offset = deps$offset[i], stringsAsFactors = FALSE)
+    data.frame(arrow = r$arrow, x = x, y = y, shape = shape, stringsAsFactors = FALSE)
   })
-  do.call(rbind, paths)
+  do.call(rbind, rows)
 }
 
 # Where each step's label goes, given the drawn size of everything (any one

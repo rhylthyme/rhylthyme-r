@@ -19,7 +19,9 @@
 #' @inheritParams ggplot2::layer
 #' @param ... Other arguments passed on to [ggplot2::layer()], such as
 #'   `colour = "white"`.
-#' @param arrows Draw dependency arrows between lanes. Solid for a step that
+#' @param arrows Draw dependency arrows between lanes, as curves the way
+#'   rhylthyme.com draws them: a sweep into the waiting step's start, or an
+#'   S-curve between the two bars when they are close. Solid for a step that
 #'   waits for another; dashed when it starts before the other ends (a
 #'   negative offset); dotted for a step that runs only if the other aborts.
 #' @param labels Draw each bar's `label`: inside the bar when it fits, else
@@ -287,20 +289,43 @@ estimate_grob <- function(data, panel_params, coord) {
   grob
 }
 
+# Arrows are curved when the plot is drawn, when the panel has a size: see
+# makeContent.rhylthyme_arrows.
 arrow_grob <- function(data, dependencies, panel_params, coord) {
   bars <- data
   bars$step <- as.character(bars$step)
-  paths <- layout_arrows(bars, dependencies)
-  if (!nrow(paths)) return(grid::nullGrob())
-  paths <- coord$transform(paths, panel_params)
-  first <- !duplicated(paths$arrow)
-  kind <- ifelse(paths$relation[first] == "on_abort", 3, ifelse(paths$offset[first] < 0, 2, 1))
-  grid::polylineGrob(
-    paths$x, paths$y, id = paths$arrow,
+  a <- layout_arrows(bars, dependencies)
+  if (!nrow(a)) return(grid::nullGrob())
+  # coord$transform maps position aesthetics by name; borrow x/xend and
+  # y/yend/ymin/ymax to carry the anchors to panel (npc) coordinates.
+  m <- coord$transform(data.frame(x = a$x0, xend = a$x1, y = a$y0_mid, yend = a$y1_mid,
+                                  ymin = a$y0_edge, ymax = a$y1_edge), panel_params)
+  a$x0 <- m$x
+  a$x1 <- m$xend
+  a$y0_mid <- m$y
+  a$y1_mid <- m$yend
+  a$y0_edge <- m$ymin
+  a$y1_edge <- m$ymax
+  a$lty <- ifelse(a$relation == "on_abort", 3, ifelse(a$offset < 0, 2, 1))
+  grid::gTree(anchors = a, name = "arrows", cl = "rhylthyme_arrows")
+}
+
+#' @exportS3Method grid::makeContent
+makeContent.rhylthyme_arrows <- function(x) {
+  a <- x$anchors
+  inches <- function(v, axis) {
+    if (axis == "x") grid::convertX(grid::unit(v, "npc"), "in", valueOnly = TRUE)
+    else grid::convertY(grid::unit(v, "npc"), "in", valueOnly = TRUE)
+  }
+  for (col in c("x0", "x1")) a[[col]] <- inches(a[[col]], "x")
+  for (col in c("y0_mid", "y1_mid", "y0_edge", "y1_edge")) a[[col]] <- inches(a[[col]], "y")
+  curves <- arrow_curves(a)
+  grid::setChildren(x, grid::gList(grid::bezierGrob(
+    curves$x, curves$y, id = curves$arrow, default.units = "in",
     arrow = grid::arrow(length = grid::unit(1.6, "mm"), type = "closed"),
-    gp = grid::gpar(col = "grey30", fill = "grey30", lwd = 0.45 * ggplot2::.pt, lty = kind),
-    name = "arrows"
-  )
+    gp = grid::gpar(col = "grey30", fill = "grey30", lwd = 0.45 * ggplot2::.pt,
+                    lty = a$lty, lineend = "round")
+  )))
 }
 
 # Labels are placed when the plot is drawn, when the text and the bars have
