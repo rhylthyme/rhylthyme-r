@@ -109,5 +109,8 @@ test_that("a run plots its actual timeline, alone or with others", {
 
 test_that("a run looks right", {
   skip_if_not_installed("vdiffr")
+  # Clock times display in the session's time zone; pin it so the drawing is
+  # the same on every machine.
+  withr::local_timezone("UTC")
   vdiffr::expect_doppelganger("run with program", autoplot(read_rhylthyme_run(run_path(), program = dinner())))
 })
