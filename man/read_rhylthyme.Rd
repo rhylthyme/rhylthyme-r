@@ -7,8 +7,9 @@
 read_rhylthyme(x, validate = TRUE, start_at = NULL, finish_at = NULL)
 }
 \arguments{
-\item{x}{The program: a path to a JSON file, an \verb{http(s)://} URL, a JSON
-string, or a list (as from \code{\link[jsonlite:read_json]{jsonlite::read_json()}}, or built in R; a
+\item{x}{The program: a path to a JSON file, an \verb{http(s)://} URL (a
+rhylthyme.com program page, \verb{.../p/<id>}, or share link, \verb{...?share=<id>},
+is read through the site's public API), a JSON string, or a list (as from \code{\link[jsonlite:read_json]{jsonlite::read_json()}}, or built in R; a
 length-one vector becomes a JSON scalar, so wrap a one-element array in
 \code{\link[=list]{list()}} or \code{\link[=I]{I()}}).}
 

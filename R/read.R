@@ -3,8 +3,9 @@
 #' Reads a Rhylthyme program (JSON), checks it against the program schema and
 #' times every step with the same engine rhylthyme.com uses.
 #'
-#' @param x The program: a path to a JSON file, an `http(s)://` URL, a JSON
-#'   string, or a list (as from [jsonlite::read_json()], or built in R; a
+#' @param x The program: a path to a JSON file, an `http(s)://` URL (a
+#'   rhylthyme.com program page, `.../p/<id>`, or share link, `...?share=<id>`,
+#'   is read through the site's public API), a JSON string, or a list (as from [jsonlite::read_json()], or built in R; a
 #'   length-one vector becomes a JSON scalar, so wrap a one-element array in
 #'   [list()] or [I()]).
 #' @param validate If `TRUE`, the default, a program that breaks the schema is
@@ -75,6 +76,8 @@ resolve_source <- function(x) {
     return(list(json = x, source = "string"))
   }
   if (grepl("^https?://", x, ignore.case = TRUE)) {
+    api <- rhylthyme_link_api(x)
+    if (!is.null(api)) return(list(json = fetch_link(x, api), source = x))
     return(list(json = fetch_url(x), source = x))
   }
   if (!file.exists(x)) {
@@ -82,6 +85,38 @@ resolve_source <- function(x) {
   }
   json <- paste(readLines(x, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   list(json = json, source = normalizePath(x))
+}
+
+# rhylthyme.com links (any vertical: kitchen., lab., www. ...; and
+# appistry.com, the same site): a public program page /p/<id>, or a share
+# link ?share=<id>. Returns the public API URL on the same site that serves
+# the program's JSON, or NULL for any other URL.
+rhylthyme_link_api <- function(url) {
+  parts <- regmatches(url, regexec("^(https?://([^/?#:]+)(:[0-9]+)?)([^?#]*)(\\?[^#]*)?", url, ignore.case = TRUE))[[1]]
+  if (!length(parts)) return(NULL)
+  host <- tolower(parts[3])
+  if (!grepl("(^|\\.)(rhylthyme|appistry)\\.com$", host)) return(NULL)
+  origin <- parts[2]
+  share <- regmatches(parts[6], regexec("[?&]share=([0-9a-fA-F]+)", parts[6]))[[1]]
+  if (length(share)) return(paste0(origin, "/api/public/shares/", tolower(share[2])))
+  page <- regmatches(parts[5], regexec("^/p/([0-9a-fA-F-]{36})/?$", parts[5]))[[1]]
+  if (length(page)) return(paste0(origin, "/api/public/programs/", page[2]))
+  NULL
+}
+
+# The program JSON behind a rhylthyme.com link, via its public API.
+fetch_link <- function(link, api) {
+  body <- tryCatch(fetch_url(api), error = function(e) {
+    if (grepl("HTTP 404", conditionMessage(e))) {
+      stop("That rhylthyme.com program is not public, or does not exist: ", link, call. = FALSE)
+    }
+    stop(sub(api, link, conditionMessage(e), fixed = TRUE), call. = FALSE)
+  })
+  row <- tryCatch(jsonlite::parse_json(body, simplifyVector = FALSE), error = function(e) NULL)
+  if (!is.list(row) || !is.list(row$program_json)) {
+    stop("rhylthyme.com did not return a program for ", link, call. = FALSE)
+  }
+  as.character(jsonlite::toJSON(row$program_json, auto_unbox = TRUE, null = "null", na = "null", digits = NA))
 }
 
 fetch_url <- function(url) {

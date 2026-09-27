@@ -68,7 +68,9 @@ resources(p)
 ```
 
 `validate_rhylthyme()` lists schema problems by step; `read_rhylthyme()`
-also takes a URL, a JSON string or a list.
+also takes a URL, a JSON string or a list, and reads rhylthyme.com links
+directly: a public program page (`https://kitchen.rhylthyme.com/p/<id>`) or a
+share link (`https://www.rhylthyme.com/?share=<id>`).
 
 The geom also works by name, on any data with start, end and lane columns:
 
