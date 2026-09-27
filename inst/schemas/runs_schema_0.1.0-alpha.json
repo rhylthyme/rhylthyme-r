@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "W3C Time Ontology (OWL-Time) alignment: https://www.w3.org/TR/owl-time/ — namespace prefix time: = http://www.w3.org/2006/time#. A run record is the time:ProperInterval actually occupied by one execution of a program. Where the program schema describes planned intervals, this schema records observed ones: every time:Instant is a number of seconds from startedAt.",
+  "title": "Rhylthyme Run Record Schema",
+  "description": "One JSON document per execution of a Rhylthyme program: the timings the program planned, frozen at run start, beside the timings that actually happened. Stored separately from the program so history never rewrites the plan.",
+  "type": "object",
+  "required": [
+    "runId",
+    "programId",
+    "programVersion",
+    "runtime",
+    "startedAt",
+    "outcome",
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Version of the runs schema this record conforms to",
+      "default": "0.1.0-alpha"
+    },
+    "runId": {
+      "type": "string",
+      "description": "Unique identifier for the run: the UTC start instant in ISO 8601 followed by a dash and four hex characters, e.g. 2026-09-11T16:02:11Z-8f3a",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z-[0-9a-f]{4}$"
+    },
+    "programId": {
+      "type": "string",
+      "description": "programId of the program that was run"
+    },
+    "programVersion": {
+      "type": "string",
+      "description": "Content hash of the program JSON that was run: 'sha256:' followed by the hex SHA-256 of the canonical JSON (keys sorted by code point, no whitespace, UTF-8, integral numbers written without a fractional part)",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "runtime": {
+      "type": "object",
+      "description": "Which runtime produced the record and how its clock behaved",
+      "required": ["kind", "version", "clockMode"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["cli", "web"],
+          "description": "The runtime: the terminal runner (cli) or the browser player (web)"
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the runtime package that wrote the record"
+        },
+        "clockMode": {
+          "type": "string",
+          "enum": ["wall", "simulated"],
+          "description": "wall: actual times were measured against the wall clock (possibly scaled by speed); simulated: the runtime advanced its own clock, which may drift from wall time"
+        },
+        "speed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1,
+          "description": "Time-scale factor the run was executed at. 1 means real time; runs at any other speed measure the timer, not the executor"
+        }
+      }
+    },
+    "environmentId": {
+      "type": ["string", "null"],
+      "description": "Identifier or file reference of the environment the run used, if any"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "$comment": "time:hasBeginning of the run interval — the time:Instant every other number in the record is measured from",
+      "description": "UTC instant at which the program clock started (ISO 8601). All step times are seconds from this instant"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time",
+      "$comment": "time:hasEnd of the run interval",
+      "description": "UTC instant at which the record was written (ISO 8601)"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["completed", "aborted", "abandoned"],
+      "description": "completed: every step reached its end; aborted: at least one step was aborted; abandoned: the run ended before every step had ended (quit, interrupt, crash)"
+    },
+    "context": {
+      "type": "object",
+      "description": "Snapshot of program.metadata plus environment facts at run time (serves, actors, environmentType, ...). Free-form so that authors' metadata survives unchanged; userTags holds answers to declared variance factors",
+      "properties": {
+        "userTags": {
+          "type": "object",
+          "description": "Author-declared variance factors answered by the executor at run start (see metadata.varianceFactors in the program schema); keys are the factor keys",
+          "additionalProperties": {
+            "type": ["string", "number", "integer", "boolean", "null"]
+          }
+        },
+        "offsetsUse": {
+          "type": "string",
+          "enum": ["planned", "predicted"],
+          "description": "Which durations this run resolved NEGATIVE offsets against, copied from the program's metadata.offsetsUse at run start: 'planned' (the author's defaultSeconds) or 'predicted' (a duration predicted from history, where one qualified — see predictedAnchorSeconds on the gated steps)"
+        }
+      },
+      "additionalProperties": true
+    },
+    "steps": {
+      "type": "array",
+      "description": "One entry per step of the expanded program (replicates expanded), in program order, whether or not the step ever started",
+      "items": { "$ref": "#/definitions/stepRecord" }
+    }
+  },
+  "definitions": {
+    "seconds": {
+      "type": "number",
+      "minimum": 0,
+      "$comment": "A time:Instant expressed as a time:Duration from startedAt with time:unitType time:unitSecond"
+    },
+    "stepRecord": {
+      "type": "object",
+      "required": ["stepId", "planned"],
+      "additionalProperties": false,
+      "properties": {
+        "stepId": {
+          "type": "string",
+          "description": "The step's id as authored in the program (without any replicate suffix)"
+        },
+        "instance": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "1-based replicate index. 1 for steps that are not replicated; for a replicated step the runtime id is '<stepId>-r<instance>'"
+        },
+        "planned": {
+          "type": "object",
+          "$comment": "The time:ProperInterval the timing engine predicted for this step, frozen when the run started so that later edits to the program do not rewrite history",
+          "description": "Planned timing, computed from the program at run start and never updated afterwards",
+          "required": ["start", "end", "durationType"],
+          "additionalProperties": false,
+          "properties": {
+            "start": {
+              "$ref": "#/definitions/seconds",
+              "description": "Planned time:hasBeginning, seconds from startedAt"
+            },
+            "end": {
+              "$ref": "#/definitions/seconds",
+              "description": "Planned time:hasEnd, seconds from startedAt (for variable and indefinite steps: start plus defaultSeconds)"
+            },
+            "durationType": {
+              "type": "string",
+              "enum": ["fixed", "variable", "indefinite"],
+              "description": "Duration kind of the step in the program"
+            },
+            "seconds": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Fixed duration in seconds (fixed steps)"
+            },
+            "minSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Lower bound of the duration in seconds (variable and indefinite steps)"
+            },
+            "maxSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Upper bound of the duration in seconds (variable steps)"
+            },
+            "defaultSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Author's expected duration in seconds (variable and indefinite steps)"
+            }
+          }
+        },
+        "actual": {
+          "type": "object",
+          "$comment": "The time:ProperInterval the step actually occupied. Absent when the step never started; end absent when the run ended while the step was still running",
+          "description": "Observed timing. Absent if the step never started",
+          "required": ["start"],
+          "additionalProperties": false,
+          "properties": {
+            "start": {
+              "$ref": "#/definitions/seconds",
+              "description": "Observed time:hasBeginning, seconds from startedAt"
+            },
+            "end": {
+              "$ref": "#/definitions/seconds",
+              "description": "Observed time:hasEnd, seconds from startedAt"
+            }
+          }
+        },
+        "endedBy": {
+          "type": "string",
+          "enum": ["executor", "timer", "trigger", "abort", "instrument", "skipped"],
+          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted), instrument (a galago instrument reported its command finished), skipped (its instrument command failed and the operator marked it done)"
+        },
+        "triggerFiredAt": {
+          "$ref": "#/definitions/seconds",
+          "$comment": "The time:Instant at which the step's startTrigger relation became satisfied; actual.start minus triggerFiredAt is time spent waiting for resources or actors",
+          "description": "Seconds from startedAt at which the step's start trigger was first satisfied"
+        },
+        "waitedOn": {
+          "type": "array",
+          "description": "Ids (as they appear in the expanded program, replicate suffix included) of the predecessor steps whose end gated this step's start",
+          "items": { "type": "string" }
+        },
+        "pausedSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "default": 0,
+          "description": "Wall-clock seconds the program clock was paused while this step was running. Calibration discards steps with pauses"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free text entered by the executor. Stripped before any public contribution"
+        },
+        "predictedAnchorSeconds": {
+          "type": "number",
+          "minimum": 0,
+          "$comment": "Present only in runs with context.offsetsUse == \"predicted\" whose trigger actually used a prediction; its absence means the author's own number was used, which is also the only possibility for a run with offsetsUse \"planned\".",
+          "description": "For a step whose start trigger carries a negative offsetSeconds: the predicted duration, in seconds, that was used to project the anchor step's end instead of the anchor's authored defaultSeconds"
+        },
+        "instrument": {
+          "type": "object",
+          "description": "For a step with a galago instrument command: the tool, the command, and every reply, one per attempt (retries included). Tool addresses are never recorded",
+          "additionalProperties": false,
+          "required": ["tool", "command", "replies"],
+          "properties": {
+            "tool": { "type": "string", "description": "Workcell tool name, as in the program" },
+            "command": { "type": "string", "description": "galago command name" },
+            "replies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["attempt", "at", "code"],
+                "properties": {
+                  "attempt": { "type": "integer", "minimum": 1 },
+                  "at": { "$ref": "#/definitions/seconds", "description": "Seconds from startedAt at which the reply arrived" },
+                  "code": { "type": "string", "description": "galago ResponseCode name (SUCCESS, DRIVER_ERROR, ...) or TIMEOUT, UNREACHABLE, NOT_SENT" },
+                  "errorMessage": { "type": "string" },
+                  "metadata": { "type": "object", "description": "Data the tool returned with its reply (e.g. plate reader values)" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "required": ["actual"],
+        "properties": { "actual": { "required": ["end"] } }
+      },
+      "then": {
+        "required": ["endedBy"]
+      }
+    }
+  }
+}

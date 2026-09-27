@@ -84,7 +84,7 @@ stat_rhylthyme <- function(mapping = NULL, data = NULL, geom = "rhylthyme",
 rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
                             show.legend, inherit.aes, lanes = "track",
                             lanes_given = FALSE, collapse_replicates = FALSE, ...) {
-  if (inherits(data, c("rhylthyme_program", "rhylthyme_programs"))) data <- ggplot2::fortify(data)
+  if (inherits(data, c("rhylthyme_program", "rhylthyme_programs", "rhylthyme_run"))) data <- ggplot2::fortify(data)
   params <- list(na.rm = na.rm, ...)
   params <- params[!vapply(params, is.null, logical(1))]
   layer <- ggplot2::layer(
@@ -105,7 +105,7 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
   layer <- object$layer
   data <- if (is.data.frame(object$data)) object$data else plot$data
   program <- attr(data, "rhylthyme_program")
-  if (is_program_data(data) && inherits(program, c("rhylthyme_program", "rhylthyme_programs"))) {
+  if (is_program_data(data) && inherits(program, c("rhylthyme_program", "rhylthyme_programs", "rhylthyme_run"))) {
     mine <- as.list(layer$mapping %||% ggplot2::aes())
     inherited <- if (isTRUE(object$inherit.aes)) as.list(plot$mapping %||% ggplot2::aes()) else list()
     # x = start is not drawn (bars use xmin/xmax); it lets ggplot2 pick the
@@ -179,9 +179,11 @@ fortify.rhylthyme_program <- function(model, data, ...) plot_data(model)$data
 #' @exportS3Method ggplot2::fortify
 fortify.rhylthyme_programs <- function(model, data, ...) plot_data(model)$data
 
-# The steps table plus each variable step's range, in plain seconds.
+# The steps table plus each variable step's range, in plain seconds; steps
+# with no time (a run's steps that never started) are not drawn.
 plot_frame <- function(model) {
   out <- model$steps
+  out <- out[!is.na(out$start) & !is.na(out$end), , drop = FALSE]
   ranged <- !is.na(out$min_seconds) & !is.na(out$max_seconds) & out$max_seconds > out$min_seconds
   out$range_min <- ifelse(ranged, out$start + out$min_seconds, NA_real_)
   out$range_max <- ifelse(ranged, out$start + out$max_seconds, NA_real_)

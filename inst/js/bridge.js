@@ -117,8 +117,50 @@ var RhylthymeR = (function () {
     return { steps: steps, tracks: tracks, dependencies: dependencies };
   }
 
+  // One row per run-record entry: the program's runtime step id (replicate
+  // instances included, as the engine maps them), the actual start and end
+  // (the engine's run translation), the plan the runner had, and what ended
+  // the step. `program` may be null (no program to map ids against).
+  function run(record, program) {
+    var ids = null;
+    if (program) {
+      ids = {};
+      ((Rhylthyme.expandReplicates(program).tracks) || []).forEach(function (t) {
+        ((t && t.steps) || []).forEach(function (s) { if (s && s.stepId) ids[s.stepId] = true; });
+      });
+    }
+    var actual = Rhylthyme.actualFromRun(record, program || { tracks: [] });
+    var rows = [];
+    ((record && record.steps) || []).forEach(function (e) {
+      if (!e || !e.stepId) return;
+      var id = Rhylthyme.runtimeStepId(e, ids);
+      var a = actual[id] || {};
+      var p = e.planned || {};
+      var replies = (e.instrument && Array.isArray(e.instrument.replies)) ? e.instrument.replies : [];
+      var last = replies.length ? replies[replies.length - 1] : null;
+      rows.push({
+        step_id: id,
+        run_step_id: String(e.stepId),
+        instance: typeof e.instance === 'number' ? e.instance : 1,
+        start: typeof a.start === 'number' ? a.start : null,
+        end: typeof a.end === 'number' ? a.end : null,
+        planned_start: typeof p.start === 'number' ? p.start : null,
+        planned_end: typeof p.end === 'number' ? p.end : null,
+        ended_by: e.endedBy ? String(e.endedBy) : null,
+        failed: replies.some(function (r) { return r && r.code !== 'SUCCESS'; }),
+        last_code: last && last.code ? String(last.code) : null,
+        paused_seconds: typeof e.pausedSeconds === 'number' ? e.pausedSeconds : null,
+        waited_on: Array.isArray(e.waitedOn) ? e.waitedOn.join(',') : null
+      });
+    });
+    return rows;
+  }
+
   return {
     version: Rhylthyme.version,
+    runFromJson: function (recordText, programText) {
+      return run(JSON.parse(recordText), programText ? JSON.parse(programText) : null);
+    },
     supportedSchemaVersions: Rhylthyme.supportedSchemaVersions,
     describeJson: function (text) { return describe(JSON.parse(text)); }
   };

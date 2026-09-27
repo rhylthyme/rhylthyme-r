@@ -55,13 +55,13 @@ unsupported_version_message <- function(version) {
   )
 }
 
-stop_if_invalid <- function(problems) {
+stop_if_invalid <- function(problems, what = "program") {
   if (!nrow(problems)) return(invisible())
-  lines <- problem_lines(problems)
+  lines <- problem_lines(problems, top = if (what == "program") "program" else "record")
   shown <- utils::head(lines, 20)
   more <- length(lines) - length(shown)
   message <- paste0(
-    sprintf("The program is not valid (%d problem%s):\n", nrow(problems), if (nrow(problems) == 1) "" else "s"),
+    sprintf("The %s is not valid (%d problem%s):\n", what, nrow(problems), if (nrow(problems) == 1) "" else "s"),
     paste0("* ", shown, collapse = "\n"),
     if (more > 0) sprintf("\n... and %d more; validate_rhylthyme() lists them all.", more) else "",
     "\nUse `validate = FALSE` to read it anyway."
@@ -72,29 +72,39 @@ stop_if_invalid <- function(problems) {
   ))
 }
 
-problem_lines <- function(problems) {
+problem_lines <- function(problems, top = "program") {
   where <- ifelse(is.na(problems$where) | problems$where == "", "", paste0(", ", problems$where))
   owner <- ifelse(
     !is.na(problems$step_id), sprintf("step '%s'", problems$step_id),
-    ifelse(!is.na(problems$track_id), sprintf("track '%s'", problems$track_id), "program")
+    ifelse(!is.na(problems$track_id), sprintf("track '%s'", problems$track_id), top)
   )
   paste0(owner, where, ": ", problems$message)
 }
 
-program_validator <- function() {
-  if (is.null(.rhylthyme_env$validator)) {
-    path <- system.file("schemas", PROGRAM_SCHEMA, package = "rhylthyme", mustWork = TRUE)
+# A compiled validator and the parsed schema for one of the vendored schema
+# files, cached for the session.
+schema_validator <- function(file) {
+  cache <- .rhylthyme_env$schemas %||% list()
+  if (is.null(cache[[file]])) {
+    path <- system.file("schemas", file, package = "rhylthyme", mustWork = TRUE)
     text <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-    .rhylthyme_env$validator <- jsonvalidate::json_schema$new(text, engine = "ajv")
-    .rhylthyme_env$schema <- jsonlite::parse_json(text, simplifyVector = FALSE)
+    cache[[file]] <- list(
+      validator = jsonvalidate::json_schema$new(text, engine = "ajv"),
+      schema = jsonlite::parse_json(text, simplifyVector = FALSE)
+    )
+    .rhylthyme_env$schemas <- cache
   }
-  .rhylthyme_env$validator
+  cache[[file]]
 }
 
-schema_problems <- function(json, program) {
-  result <- program_validator()$validate(json, verbose = TRUE)
+# Problems `json` (parsed as `data`) has against a vendored schema, one per
+# mistake, located by track and step.
+schema_problems <- function(json, data, file = PROGRAM_SCHEMA) {
+  compiled <- schema_validator(file)
+  result <- compiled$validator$validate(json, verbose = TRUE)
   if (isTRUE(result)) return(problems_frame())
-  errors <- condense_errors(attr(result, "errors"), program, .rhylthyme_env$schema)
+  program <- data
+  errors <- condense_errors(attr(result, "errors"), program, compiled$schema)
   located <- lapply(errors$instancePath, locate, program = program)
   problems_frame(
     vapply(located, `[[`, "", "track_id"),
@@ -231,6 +241,7 @@ locate <- function(pointer, program) {
 
 field_path <- function(parts) {
   if (!length(parts)) return("")
-  parts <- ifelse(grepl("^[0-9]+$", parts), sprintf("[%d]", as.integer(parts) + 1), parts)
+  index <- grepl("^[0-9]+$", parts)
+  parts[index] <- sprintf("[%d]", as.integer(parts[index]) + 1)
   sub("^\\.", "", gsub("\\.\\[", "[", paste0(".", parts, collapse = "")))
 }

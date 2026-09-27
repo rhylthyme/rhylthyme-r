@@ -47,6 +47,16 @@ stack with a `program` column):
 autoplot(c(Saturday = p, Sunday = p))
 ```
 
+Run records (what actually happened, from the `rhylthyme` runner or
+rhylthyme.com) read and plot the same way, on the clock time they ran:
+
+```r
+run <- read_rhylthyme_run("thanksgiving.run.json", program = dinner)
+run          # completed, 13 steps, 4:26:42
+steps(run)   # actual start/end, status (completed, skipped, aborted, ...), plan
+autoplot(run)
+```
+
 The program is also plain data:
 
 ```r

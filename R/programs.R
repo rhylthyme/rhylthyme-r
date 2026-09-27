@@ -7,7 +7,8 @@
 #' use [autoplot()]). Step ids may repeat between programs: plots match
 #' dependencies within a program only. `c(p1, p2)` does the same.
 #'
-#' @param ... `rhylthyme_program`s (or sets of them). Argument names become
+#' @param ... `rhylthyme_program`s, runs from [read_rhylthyme_run()], or sets
+#'   of them. Argument names become
 #'   the `program` labels; otherwise each program's name is used, made
 #'   unique.
 #' @return A `rhylthyme_programs`.
@@ -28,12 +29,12 @@ rhylthyme_programs <- function(...) {
     if (inherits(a, "rhylthyme_programs")) {
       programs <- c(programs, a$programs)
       labels <- c(labels, names(a$programs))
-    } else if (inherits(a, "rhylthyme_program")) {
+    } else if (inherits(a, c("rhylthyme_program", "rhylthyme_run"))) {
       programs <- c(programs, list(a))
       name <- if (nzchar(given[i])) given[i] else a$name
       labels <- c(labels, if (is.null(name) || is.na(name)) sprintf("program %d", length(programs)) else name)
     } else {
-      stop("rhylthyme_programs() takes programs from read_rhylthyme().", call. = FALSE)
+      stop("rhylthyme_programs() takes programs from read_rhylthyme() (or runs from read_rhylthyme_run()).", call. = FALSE)
     }
   }
   if (!length(programs)) stop("rhylthyme_programs() needs at least one program.", call. = FALSE)
@@ -46,6 +47,9 @@ c.rhylthyme_program <- function(...) rhylthyme_programs(...)
 
 #' @export
 c.rhylthyme_programs <- function(...) rhylthyme_programs(...)
+
+#' @export
+c.rhylthyme_run <- function(...) rhylthyme_programs(...)
 
 unique_labels <- function(labels) {
   out <- labels
@@ -158,6 +162,12 @@ plot_data <- function(model, collapse = FALSE) {
     frames[[i]] <- frame
     deps[[i]] <- d
   }
+  # A program's and a run's rows have different columns; bind on all of them.
+  columns <- unique(unlist(lapply(frames, names)))
+  frames <- lapply(frames, function(f) {
+    for (col in setdiff(columns, names(f))) f[[col]] <- rep(NA, nrow(f))
+    f[columns]
+  })
   data <- do.call(rbind, frames)
   rownames(data) <- NULL
   for (col in names(modes)) {

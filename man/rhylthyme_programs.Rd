@@ -7,7 +7,8 @@
 rhylthyme_programs(...)
 }
 \arguments{
-\item{...}{\code{rhylthyme_program}s (or sets of them). Argument names become
+\item{...}{\code{rhylthyme_program}s, runs from \code{\link[=read_rhylthyme_run]{read_rhylthyme_run()}}, or sets
+of them. Argument names become
 the \code{program} labels; otherwise each program's name is used, made
 unique.}
 }
