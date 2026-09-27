@@ -21,13 +21,13 @@ Imports:
     grid,
     jsonlite,
     jsonvalidate,
+    stats,
     utils,
     V8
 Suggests:
     dplyr,
     testthat (>= 3.0.0),
     rlang,
-    stats,
     vdiffr,
     withr
 Config/testthat/edition: 3

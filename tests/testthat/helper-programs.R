@@ -20,3 +20,11 @@ program_file <- function(program, env = parent.frame()) {
   jsonlite::write_json(program, path, auto_unbox = TRUE, null = "null")
   path
 }
+
+# The named parts GeomRhylthyme draws for the first panel (bars, ranges,
+# estimates, arrows, labels).
+panel_grob <- function(plot) {
+  grob <- ggplot2::layer_grob(plot)[[1]]
+  names <- vapply(grob$children, function(g) g$name, "")
+  stats::setNames(grob$children, names)
+}

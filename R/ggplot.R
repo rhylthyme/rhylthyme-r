@@ -10,8 +10,11 @@
 #' works by name: `geom = "rhylthyme"`.
 #'
 #' Aesthetics: `xmin`, `xmax` and `y` (required); `fill`, `colour`, `alpha`,
-#' `linewidth`, `linetype`; `label` (the text for each bar) and `step` (the
-#' id the `dependencies` table refers to).
+#' `linewidth`, `linetype`; `label` (the text for each bar), `step` (the id
+#' the `dependencies` table refers to), `xlower` and `xupper` (a variable
+#' step's shortest and longest end) and `estimate` (`TRUE` for an estimated
+#' length). For a program these default to `range_min`, `range_max` and
+#' `estimate`.
 #'
 #' @inheritParams ggplot2::layer
 #' @param ... Other arguments passed on to [ggplot2::layer()], such as
@@ -24,6 +27,15 @@
 #' @param dependencies A data frame with `from_step`, `to_step` and
 #'   `relation` (and `offset`), as [dependencies()] returns, matched to the
 #'   `step` aesthetic. Taken from the program when the plot's data is one.
+#' @param ranges Show each variable step's range: a faded extension from
+#'   its planned end to its longest, and a thin line under the bar from its
+#'   shortest to its longest.
+#' @param estimates Outline, dotted, the bars whose length is an estimate
+#'   (instrument steps with no duration, indefinite steps, and durations
+#'   `rhylthyme plan` filled in), as rhylthyme.com does.
+#' @param collapse_replicates Draw one bar per authored step instead of one
+#'   per replicate instance, spanning all its instances and labelled with
+#'   the count (only for a program as the data; [steps()] is unaffected).
 #' @param label_size Label text size, in mm (as [ggplot2::geom_text()]'s
 #'   `size`).
 #' @param na.rm If `FALSE`, the default, steps with no computed time are
@@ -37,12 +49,16 @@
 #' @export
 geom_rhylthyme <- function(mapping = NULL, data = NULL, stat = "rhylthyme",
                            position = "identity", ..., arrows = TRUE,
-                           labels = TRUE, dependencies = NULL, label_size = 3,
-                           na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
+                           labels = TRUE, ranges = TRUE, estimates = TRUE,
+                           collapse_replicates = FALSE, dependencies = NULL,
+                           label_size = 3, na.rm = FALSE, show.legend = NA,
+                           inherit.aes = TRUE) {
   rhylthyme_layer(mapping, data, stat = stat, geom = GeomRhylthyme,
                   position = position, na.rm = na.rm, show.legend = show.legend,
-                  inherit.aes = inherit.aes, arrows = arrows, labels = labels,
-                  dependencies = dependencies, label_size = label_size, ...)
+                  inherit.aes = inherit.aes, collapse_replicates = collapse_replicates,
+                  arrows = arrows, labels = labels, ranges = ranges,
+                  estimates = estimates, dependencies = dependencies,
+                  label_size = label_size, ...)
 }
 
 #' @rdname geom_rhylthyme
@@ -56,7 +72,7 @@ stat_rhylthyme <- function(mapping = NULL, data = NULL, geom = "rhylthyme",
 }
 
 rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
-                            show.legend, inherit.aes, ...) {
+                            show.legend, inherit.aes, collapse_replicates = FALSE, ...) {
   if (inherits(data, "rhylthyme_program")) data <- ggplot2::fortify(data)
   params <- list(na.rm = na.rm, ...)
   params <- params[!vapply(params, is.null, logical(1))]
@@ -65,7 +81,8 @@ rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
     position = position, show.legend = show.legend, inherit.aes = inherit.aes,
     params = params
   )
-  structure(list(layer = layer, data = data, inherit.aes = inherit.aes),
+  structure(list(layer = layer, data = data, inherit.aes = inherit.aes,
+                 collapse_replicates = isTRUE(collapse_replicates)),
             class = "rhylthyme_layer")
 }
 
@@ -75,19 +92,29 @@ rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
 ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
   layer <- object$layer
   data <- if (is.data.frame(object$data)) object$data else plot$data
-  if (is_program_data(data)) {
+  program <- attr(data, "rhylthyme_program")
+  if (is_program_data(data) && inherits(program, "rhylthyme_program")) {
     mine <- as.list(layer$mapping %||% ggplot2::aes())
     inherited <- if (isTRUE(object$inherit.aes)) as.list(plot$mapping %||% ggplot2::aes()) else list()
     defaults <- as.list(ggplot2::aes(
-      xmin = start, xmax = end, y = lane, fill = track, step = step_id, label = name
+      xmin = start, xmax = end, y = lane, fill = track, step = step_id, label = name,
+      xlower = range_min, xupper = range_max, estimate = estimate
     ))
     missing <- setdiff(names(defaults), c(names(mine), names(inherited)))
     if (length(missing)) {
       layer$mapping <- ggplot2::aes(!!!c(mine, defaults[missing]))
     }
-    if (is.null(layer$geom_params$dependencies) && "dependencies" %in% layer$geom$parameters()) {
-      layer$geom_params$dependencies <- attr(data, "rhylthyme_dependencies")
+    dependencies <- program$dependencies
+    if (isTRUE(object$collapse_replicates)) {
+      collapsed <- collapse_replicates(data, program)
+      layer$data <- add_lanes(collapsed$data)
+      dependencies <- collapsed$dependencies
     }
+    if (is.null(layer$geom_params$dependencies) && "dependencies" %in% layer$geom$parameters()) {
+      layer$geom_params$dependencies <- dependencies
+    }
+  } else if (isTRUE(object$collapse_replicates)) {
+    warning("`collapse_replicates` needs a Rhylthyme program as the data; ignored.", call. = FALSE)
   }
   plot + layer
 }
@@ -99,9 +126,11 @@ is_program_data <- function(data) {
 #' Turn a program into plotting data
 #'
 #' One row per step: the columns of [steps()], plus `track` (a factor in
-#' authored order) and `lane` (the same, reversed, so the first track is
-#' drawn at the top). The program's [dependencies()] ride along as the
-#' `"rhylthyme_dependencies"` attribute, for [geom_rhylthyme()]'s arrows.
+#' authored order), `lane` (the same, reversed, so the first track is drawn
+#' at the top), and `range_min` / `range_max` (a variable step's shortest
+#' and longest end; `NA` otherwise). The program itself rides along as the
+#' `"rhylthyme_program"` attribute, for [geom_rhylthyme()]'s arrows and
+#' replicate collapsing.
 #'
 #' @param model A `rhylthyme_program`.
 #' @param data Ignored.
@@ -110,14 +139,23 @@ is_program_data <- function(data) {
 #' @exportS3Method ggplot2::fortify
 fortify.rhylthyme_program <- function(model, data, ...) {
   out <- model$steps
-  tracks <- unique(out[c("track_id", "track_name", "track_index")])
+  ranged <- !is.na(out$min_seconds) & !is.na(out$max_seconds) & out$max_seconds > out$min_seconds
+  out$range_min <- ifelse(ranged, out$start + out$min_seconds, NA_real_)
+  out$range_max <- ifelse(ranged, out$start + out$max_seconds, NA_real_)
+  out <- add_lanes(out)
+  attr(out, "rhylthyme_program") <- model
+  out
+}
+
+# `track` and `lane` factors for the tracks present in `data`, in track order.
+add_lanes <- function(data) {
+  tracks <- unique(data[c("track_id", "track_name", "track_index")])
   tracks <- tracks[order(tracks$track_index), ]
   label <- if (anyDuplicated(tracks$track_name)) tracks$track_id else tracks$track_name
-  key <- match(out$track_id, tracks$track_id)
-  out$track <- factor(label[key], levels = label)
-  out$lane <- factor(label[key], levels = rev(label))
-  attr(out, "rhylthyme_dependencies") <- model$dependencies
-  out
+  key <- match(data$track_id, tracks$track_id)
+  data$track <- factor(label[key], levels = label)
+  data$lane <- factor(label[key], levels = rev(label))
+  data
 }
 
 #' @rdname geom_rhylthyme
@@ -140,7 +178,7 @@ GeomRhylthyme <- ggplot2::ggproto("GeomRhylthyme", ggplot2::Geom,
   non_missing_aes = c("ymin", "ymax"),
   default_aes = ggplot2::aes(
     colour = NA, fill = "grey35", linewidth = 0.5, linetype = 1, alpha = NA,
-    label = NA, step = NA
+    label = NA, step = NA, estimate = FALSE
   ),
   # A stat other than StatRhylthyme (e.g. stat = "identity") leaves the bar
   # extents to the geom.
@@ -150,10 +188,18 @@ GeomRhylthyme <- ggplot2::ggproto("GeomRhylthyme", ggplot2::Geom,
   },
   draw_panel = function(self, data, panel_params, coord, lineend = "butt",
                         linejoin = "mitre", arrows = TRUE, labels = TRUE,
-                        dependencies = NULL, label_size = 3) {
-    bars <- ggplot2::GeomRect$draw_panel(data, panel_params, coord,
-                                         lineend = lineend, linejoin = linejoin)
-    grobs <- list(bars)
+                        ranges = TRUE, estimates = TRUE, dependencies = NULL,
+                        label_size = 3) {
+    grobs <- list()
+    if (isTRUE(ranges) && !is.null(data$xupper)) {
+      grobs <- c(grobs, list(range_grob(data, panel_params, coord)))
+    }
+    grobs <- c(grobs, list(ggplot2::GeomRect$draw_panel(
+      data, panel_params, coord, lineend = lineend, linejoin = linejoin
+    )))
+    if (isTRUE(estimates) && any(data$estimate %in% TRUE)) {
+      grobs <- c(grobs, list(estimate_grob(data, panel_params, coord)))
+    }
     if (isTRUE(arrows) && !is.null(dependencies)) {
       grobs <- c(grobs, list(arrow_grob(data, dependencies, panel_params, coord)))
     }
@@ -164,6 +210,50 @@ GeomRhylthyme <- ggplot2::ggproto("GeomRhylthyme", ggplot2::Geom,
   },
   draw_key = ggplot2::draw_key_rect
 )
+
+# A variable step's range: the faded extension from its planned end to its
+# longest (as the web draws it), under the bar, and a whisker from shortest
+# to longest in the gap below the bar.
+range_grob <- function(data, panel_params, coord) {
+  r <- data[is.finite(data$xlower) & is.finite(data$xupper), , drop = FALSE]
+  if (!nrow(r)) return(grid::nullGrob())
+  ext <- r[r$xupper > r$xmax, , drop = FALSE]
+  children <- list()
+  if (nrow(ext)) {
+    ext$xmin <- ext$xmax
+    ext$xmax <- ext$xupper
+    ext$alpha <- 0.3
+    ext$colour <- NA
+    children <- c(children, list(ggplot2::GeomRect$draw_panel(ext, panel_params, coord)))
+  }
+  lane_gap <- (r$ymax - r$ymin) / 0.8 * 0.1
+  y <- r$ymin - lane_gap / 2
+  cap <- lane_gap / 3
+  seg <- data.frame(
+    x = c(r$xlower, r$xlower, r$xupper), xend = c(r$xupper, r$xlower, r$xupper),
+    y = c(y, y - cap, y - cap), yend = c(y, y + cap, y + cap)
+  )
+  seg <- coord$transform(seg, panel_params)
+  children <- c(children, list(grid::segmentsGrob(
+    seg$x, seg$y, seg$xend, seg$yend, default.units = "native",
+    gp = grid::gpar(col = "grey35", lwd = 0.4 * ggplot2::.pt, lineend = "butt"),
+    name = "whiskers"
+  )))
+  grid::gTree(children = do.call(grid::gList, children), name = "ranges")
+}
+
+# Dotted outline over bars whose length is an estimate.
+estimate_grob <- function(data, panel_params, coord) {
+  e <- data[data$estimate %in% TRUE, , drop = FALSE]
+  e$fill <- NA
+  e$colour <- "grey15"
+  e$linetype <- 3
+  e$linewidth <- 0.6
+  e$alpha <- NA
+  grob <- ggplot2::GeomRect$draw_panel(e, panel_params, coord)
+  grob$name <- "estimates"
+  grob
+}
 
 arrow_grob <- function(data, dependencies, panel_params, coord) {
   bars <- data

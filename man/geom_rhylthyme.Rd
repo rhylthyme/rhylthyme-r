@@ -15,6 +15,9 @@ geom_rhylthyme(
   ...,
   arrows = TRUE,
   labels = TRUE,
+  ranges = TRUE,
+  estimates = TRUE,
+  collapse_replicates = FALSE,
   dependencies = NULL,
   label_size = 3,
   na.rm = FALSE,
@@ -90,6 +93,18 @@ negative offset); dotted for a step that runs only if the other aborts.}
 \item{labels}{Draw each bar's \code{label}: inside the bar when it fits, else
 just after it when the lane has room, else not at all.}
 
+\item{ranges}{Show each variable step's range: a faded extension from
+its planned end to its longest, and a thin line under the bar from its
+shortest to its longest.}
+
+\item{estimates}{Outline, dotted, the bars whose length is an estimate
+(instrument steps with no duration, indefinite steps, and durations
+\verb{rhylthyme plan} filled in), as rhylthyme.com does.}
+
+\item{collapse_replicates}{Draw one bar per authored step instead of one
+per replicate instance, spanning all its instances and labelled with
+the count (only for a program as the data; \code{\link[=steps]{steps()}} is unaffected).}
+
 \item{dependencies}{A data frame with \code{from_step}, \code{to_step} and
 \code{relation} (and \code{offset}), as \code{\link[=dependencies]{dependencies()}} returns, matched to the
 \code{step} aesthetic. Taken from the program when the plot's data is one.}
@@ -141,8 +156,11 @@ works by name: \code{geom = "rhylthyme"}.
 }
 \details{
 Aesthetics: \code{xmin}, \code{xmax} and \code{y} (required); \code{fill}, \code{colour}, \code{alpha},
-\code{linewidth}, \code{linetype}; \code{label} (the text for each bar) and \code{step} (the
-id the \code{dependencies} table refers to).
+\code{linewidth}, \code{linetype}; \code{label} (the text for each bar), \code{step} (the id
+the \code{dependencies} table refers to), \code{xlower} and \code{xupper} (a variable
+step's shortest and longest end) and \code{estimate} (\code{TRUE} for an estimated
+length). For a program these default to \code{range_min}, \code{range_max} and
+\code{estimate}.
 }
 \examples{
 library(ggplot2)

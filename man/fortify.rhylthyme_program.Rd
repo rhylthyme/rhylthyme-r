@@ -18,7 +18,9 @@ A data frame.
 }
 \description{
 One row per step: the columns of \code{\link[=steps]{steps()}}, plus \code{track} (a factor in
-authored order) and \code{lane} (the same, reversed, so the first track is
-drawn at the top). The program's \code{\link[=dependencies]{dependencies()}} ride along as the
-\code{"rhylthyme_dependencies"} attribute, for \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}'s arrows.
+authored order), \code{lane} (the same, reversed, so the first track is drawn
+at the top), and \code{range_min} / \code{range_max} (a variable step's shortest
+and longest end; \code{NA} otherwise). The program itself rides along as the
+\code{"rhylthyme_program"} attribute, for \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}'s arrows and
+replicate collapsing.
 }

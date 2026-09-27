@@ -34,6 +34,7 @@
 <rect x='533.46' y='223.38' width='30.26' height='133.73' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #00BA38;' />
 <rect x='109.83' y='390.54' width='121.04' height='133.73' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #619CFF;' />
 <rect x='230.87' y='390.54' width='48.41' height='133.73' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #619CFF;' />
+<rect x='170.35' y='56.22' width='363.11' height='133.73' style='stroke-width: 1.28; stroke: #262626; stroke-dasharray: 1.71,5.12; stroke-linecap: butt; stroke-linejoin: miter;' />
 <polyline points='412.42,189.95 412.42,223.38 ' style='stroke-width: 0.96; stroke: #4D4D4D; stroke-dasharray: 5.12,5.12;' />
 <polygon points='410.15,219.45 412.42,223.38 414.69,219.45 ' style='stroke-width: 0.96; stroke: #4D4D4D; stroke-dasharray: 5.12,5.12; fill: #4D4D4D;' />
 <text x='173.75' y='126.02' style='font-size: 8.54px; fill: #1A1A1A; font-family: sans;' textLength='45.07px' lengthAdjust='spacingAndGlyphs'>Slow Braise</text>

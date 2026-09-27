@@ -21,7 +21,7 @@ test_that("mappings the user gives win over the program defaults", {
   p <- read_rhylthyme(example_program())
   plot <- ggplot2::ggplot(p, ggplot2::aes(fill = name)) + geom_rhylthyme()
   mapped <- names(plot$layers[[1]]$mapping)
-  expect_setequal(mapped, c("xmin", "xmax", "y", "step", "label"))
+  expect_setequal(mapped, c("xmin", "xmax", "y", "step", "label", "xlower", "xupper", "estimate"))
   plot <- ggplot2::ggplot(p) + geom_rhylthyme(ggplot2::aes(y = name))
   expect_equal(rlang::as_label(plot$layers[[1]]$mapping$y), "name")
 })
@@ -47,12 +47,6 @@ test_that("a program plots as a timeline", {
     ggplot2::ggplot(p) + geom_rhylthyme(colour = "white")
   )
 })
-
-panel_grob <- function(plot) {
-  grob <- ggplot2::layer_grob(plot)[[1]]
-  names <- vapply(grob$children, function(g) g$name, "")
-  stats::setNames(grob$children, names)
-}
 
 test_that("a program's dependencies between lanes are drawn as arrows", {
   p <- read_rhylthyme(test_path("fixtures", "programs", "compound_each_pairing.json"))
