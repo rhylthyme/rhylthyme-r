@@ -17,6 +17,7 @@ geom_rhylthyme(
   labels = TRUE,
   ranges = TRUE,
   estimates = TRUE,
+  lanes = c("track", "step", "task"),
   collapse_replicates = FALSE,
   dependencies = NULL,
   label_size = 3,
@@ -100,6 +101,13 @@ shortest to its longest.}
 \item{estimates}{Outline, dotted, the bars whose length is an estimate
 (instrument steps with no duration, indefinite steps, and durations
 \verb{rhylthyme plan} filled in), as rhylthyme.com does.}
+
+\item{lanes}{What each lane is, for a program as the data: \code{"track"} (the
+default; one lane per track, as on rhylthyme.com), \code{"step"} (one lane
+per step, a classic Gantt; step names are then on the axis, so bars get
+no label unless you map one) or \code{"task"} (one lane per resource type, so
+contention shows). In any mode, bars that overlap in a lane are stacked
+so none hides another.}
 
 \item{collapse_replicates}{Draw one bar per authored step instead of one
 per replicate instance, spanning all its instances and labelled with

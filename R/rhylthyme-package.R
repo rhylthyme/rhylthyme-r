@@ -5,5 +5,5 @@
 # Column names used in default aesthetics.
 globalVariables(c(
   "start", "end", "lane", "track", "step_id", "name", "range_min", "range_max",
-  "estimate"
+  "estimate", "step_lane", "task_lane"
 ))

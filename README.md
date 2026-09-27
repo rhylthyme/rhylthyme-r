@@ -20,6 +20,13 @@ p
 ggplot(p) + geom_rhylthyme(colour = "white")
 ```
 
+Lanes can be tracks (the default), steps (a classic Gantt) or resources,
+where steps that use a resource at the same time stack up:
+
+```r
+ggplot(p) + geom_rhylthyme(lanes = "task", aes(fill = task))
+```
+
 The program is also plain data:
 
 ```r

@@ -18,8 +18,10 @@ A data frame.
 }
 \description{
 One row per step: the columns of \code{\link[=steps]{steps()}}, plus \code{track} (a factor in
-authored order), \code{lane} (the same, reversed, so the first track is drawn
-at the top), and \code{range_min} / \code{range_max} (a variable step's shortest
+authored order), the lane factors \code{lane} (by track), \code{step_lane} and
+\code{task_lane} (see \code{lanes} in \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}; levels run bottom to top,
+so the first track or step is drawn at the top), and \code{range_min} /
+\code{range_max} (a variable step's shortest
 and longest end; \code{NA} otherwise). The program itself rides along as the
 \code{"rhylthyme_program"} attribute, for \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}'s arrows and
 replicate collapsing.

@@ -1,11 +1,67 @@
 # Layout: where bars, arrows and labels go. Pure data frames, no ggplot2 or
 # grid, so it is tested on its own; StatRhylthyme and GeomRhylthyme call it.
 
+# The lane each step goes in, as a factor whose levels run bottom to top (so
+# the first level ggplot2 draws at the top is the first track or step):
+#   "track": one lane per track, in authored order;
+#   "step":  one lane per step, by track then start time;
+#   "task":  one lane per task (resource type), in order of first use; steps
+#            with no task share a "(no task)" lane.
+# `data` has the steps() columns (track_id, track_name, track_index,
+# step_id, name, task, start).
+lane_factor <- function(data, lanes = c("track", "step", "task")) {
+  lanes <- match.arg(lanes)
+  if (!nrow(data)) return(factor(character()))
+  if (lanes == "track") {
+    tracks <- unique(data[c("track_id", "track_name", "track_index")])
+    tracks <- tracks[order(tracks$track_index), ]
+    label <- if (anyDuplicated(tracks$track_name)) tracks$track_id else tracks$track_name
+    return(factor(label[match(data$track_id, tracks$track_id)], levels = rev(label)))
+  }
+  if (lanes == "step") {
+    label <- data$name
+    twice <- label %in% label[duplicated(label)]
+    label[twice] <- sprintf("%s [%s]", label[twice], data$step_id[twice])
+    ord <- order(data$track_index, data$start, seq_len(nrow(data)))
+    return(factor(label, levels = rev(unique(label[ord]))))
+  }
+  task <- ifelse(is.na(data$task), "(no task)", data$task)
+  ord <- order(data$start, data$track_index, seq_len(nrow(data)))
+  factor(task, levels = rev(unique(task[ord])))
+}
+
+# Overlapping bars in one lane (steps sharing a task, a hand-off inside a
+# track, or any data) are stacked into sub-rows so none hides another:
+# adds `sub_row` (1 = top) and `n_sub` (sub-rows in that lane). Greedy
+# interval packing: each bar, in start order, takes the first sub-row free
+# by its start. Bars that only touch do not overlap.
+stack_overlaps <- function(data) {
+  data$sub_row <- rep(1L, nrow(data))
+  data$n_sub <- rep(1L, nrow(data))
+  for (lane in unique(data$y)) {
+    rows <- which(data$y == lane)
+    rows <- rows[order(data$xmin[rows], data$xmax[rows])]
+    ends <- numeric()
+    for (i in rows) {
+      free <- which(ends <= data$xmin[i] + 1e-9)
+      k <- if (length(free)) free[1] else length(ends) + 1
+      ends[k] <- data$xmax[i]
+      data$sub_row[i] <- k
+    }
+    data$n_sub[rows] <- length(ends)
+  }
+  data
+}
+
 # `y` is the lane position (ggplot2 has already turned a discrete lane into
-# 1, 2, ...). Bars fill `bar_height` of their lane.
+# 1, 2, ...). Bars fill `bar_height` of their lane, shared equally between
+# the lane's sub-rows when stack_overlaps() made any.
 layout_bars <- function(data, bar_height = 0.8) {
-  data$ymin <- data$y - bar_height / 2
-  data$ymax <- data$y + bar_height / 2
+  n <- if (is.null(data$n_sub)) 1 else data$n_sub
+  row <- if (is.null(data$sub_row)) 1 else data$sub_row
+  h <- bar_height / n
+  data$ymax <- data$y + bar_height / 2 - (row - 1) * h
+  data$ymin <- data$ymax - h
   data
 }
 

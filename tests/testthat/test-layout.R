@@ -89,3 +89,41 @@ test_that("a label with no room anywhere is dropped", {
 test_that("label ink contrasts with the fill", {
   expect_equal(label_ink(c("#FFFFFF", "#000000", "#F8766D", NA)), c("grey10", "white", "grey10", "grey15"))
 })
+
+lane_steps <- function() {
+  data.frame(
+    track_id = c("a", "a", "b", "b", "c"), track_name = c("A", "A", "B", "B", "C"),
+    track_index = c(1L, 1L, 2L, 2L, 3L), step_id = c("a1", "a2", "b1", "b2", "c1"),
+    name = c("Prep", "Cook", "Prep", "Serve", "Wait"),
+    task = c("bench", "stove", "bench", NA, "stove"),
+    start = c(0, 10, 5, 30, 2), stringsAsFactors = FALSE
+  )
+}
+
+test_that("track lanes follow authored track order, first at the top", {
+  f <- lane_factor(lane_steps(), "track")
+  expect_equal(levels(f), c("C", "B", "A"))
+  expect_equal(as.character(f), c("A", "A", "B", "B", "C"))
+})
+
+test_that("step lanes go by track then start, and disambiguate repeated names", {
+  f <- lane_factor(lane_steps(), "step")
+  expect_equal(rev(levels(f)), c("Prep [a1]", "Cook", "Prep [b1]", "Serve", "Wait"))
+})
+
+test_that("task lanes go by first use, with a lane for steps with no task", {
+  f <- lane_factor(lane_steps(), "task")
+  expect_equal(rev(levels(f)), c("bench", "stove", "(no task)"))
+  expect_equal(as.character(f)[4], "(no task)")
+})
+
+test_that("overlapping bars in a lane stack into sub-rows; touching ones do not", {
+  d <- data.frame(y = c(1, 1, 1, 1, 2), xmin = c(0, 5, 10, 12, 0), xmax = c(10, 12, 20, 15, 5))
+  s <- stack_overlaps(d)
+  # 0-10 row 1; 5-12 overlaps it -> row 2; 10-20 reuses row 1; 12-15 reuses row 2
+  expect_equal(s$sub_row, c(1L, 2L, 1L, 2L, 1L))
+  expect_equal(s$n_sub, c(2L, 2L, 2L, 2L, 1L))
+  b <- layout_bars(s)
+  expect_equal(b$ymax[1:2], c(1.4, 1.0))
+  expect_equal(b$ymax - b$ymin, c(rep(0.4, 4), 0.8))
+})

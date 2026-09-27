@@ -33,6 +33,12 @@
 #' @param estimates Outline, dotted, the bars whose length is an estimate
 #'   (instrument steps with no duration, indefinite steps, and durations
 #'   `rhylthyme plan` filled in), as rhylthyme.com does.
+#' @param lanes What each lane is, for a program as the data: `"track"` (the
+#'   default; one lane per track, as on rhylthyme.com), `"step"` (one lane
+#'   per step, a classic Gantt; step names are then on the axis, so bars get
+#'   no label unless you map one) or `"task"` (one lane per resource type, so
+#'   contention shows). In any mode, bars that overlap in a lane are stacked
+#'   so none hides another.
 #' @param collapse_replicates Draw one bar per authored step instead of one
 #'   per replicate instance, spanning all its instances and labelled with
 #'   the count (only for a program as the data; [steps()] is unaffected).
@@ -50,12 +56,16 @@
 geom_rhylthyme <- function(mapping = NULL, data = NULL, stat = "rhylthyme",
                            position = "identity", ..., arrows = TRUE,
                            labels = TRUE, ranges = TRUE, estimates = TRUE,
+                           lanes = c("track", "step", "task"),
                            collapse_replicates = FALSE, dependencies = NULL,
                            label_size = 3, na.rm = FALSE, show.legend = NA,
                            inherit.aes = TRUE) {
+  lanes_given <- !missing(lanes)
+  lanes <- match.arg(lanes)
   rhylthyme_layer(mapping, data, stat = stat, geom = GeomRhylthyme,
                   position = position, na.rm = na.rm, show.legend = show.legend,
-                  inherit.aes = inherit.aes, collapse_replicates = collapse_replicates,
+                  inherit.aes = inherit.aes, lanes = lanes, lanes_given = lanes_given,
+                  collapse_replicates = collapse_replicates,
                   arrows = arrows, labels = labels, ranges = ranges,
                   estimates = estimates, dependencies = dependencies,
                   label_size = label_size, ...)
@@ -72,7 +82,8 @@ stat_rhylthyme <- function(mapping = NULL, data = NULL, geom = "rhylthyme",
 }
 
 rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
-                            show.legend, inherit.aes, collapse_replicates = FALSE, ...) {
+                            show.legend, inherit.aes, lanes = "track",
+                            lanes_given = FALSE, collapse_replicates = FALSE, ...) {
   if (inherits(data, "rhylthyme_program")) data <- ggplot2::fortify(data)
   params <- list(na.rm = na.rm, ...)
   params <- params[!vapply(params, is.null, logical(1))]
@@ -82,6 +93,7 @@ rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
     params = params
   )
   structure(list(layer = layer, data = data, inherit.aes = inherit.aes,
+                 lanes = lanes, lanes_given = isTRUE(lanes_given),
                  collapse_replicates = isTRUE(collapse_replicates)),
             class = "rhylthyme_layer")
 }
@@ -97,9 +109,19 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
     mine <- as.list(layer$mapping %||% ggplot2::aes())
     inherited <- if (isTRUE(object$inherit.aes)) as.list(plot$mapping %||% ggplot2::aes()) else list()
     defaults <- as.list(ggplot2::aes(
-      xmin = start, xmax = end, y = lane, fill = track, step = step_id, label = name,
+      xmin = start, xmax = end, fill = track, step = step_id, label = name,
       xlower = range_min, xupper = range_max, estimate = estimate
     ))
+    defaults$y <- as.list(switch(object$lanes %||% "track",
+      track = ggplot2::aes(y = lane),
+      step = ggplot2::aes(y = step_lane),
+      task = ggplot2::aes(y = task_lane)
+    ))$y
+    # One lane per step already names every bar on the axis.
+    if (identical(object$lanes, "step")) defaults$label <- NULL
+    if (isTRUE(object$lanes_given) && ("y" %in% c(names(mine), names(inherited)))) {
+      warning("`lanes` is ignored because `y` is mapped.", call. = FALSE)
+    }
     missing <- setdiff(names(defaults), c(names(mine), names(inherited)))
     if (length(missing)) {
       layer$mapping <- ggplot2::aes(!!!c(mine, defaults[missing]))
@@ -113,8 +135,13 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
     if (is.null(layer$geom_params$dependencies) && "dependencies" %in% layer$geom$parameters()) {
       layer$geom_params$dependencies <- dependencies
     }
-  } else if (isTRUE(object$collapse_replicates)) {
-    warning("`collapse_replicates` needs a Rhylthyme program as the data; ignored.", call. = FALSE)
+  } else {
+    if (isTRUE(object$collapse_replicates)) {
+      warning("`collapse_replicates` needs a Rhylthyme program as the data; ignored.", call. = FALSE)
+    }
+    if (isTRUE(object$lanes_given)) {
+      warning("`lanes` needs a Rhylthyme program as the data; map `y` instead.", call. = FALSE)
+    }
   }
   plot + layer
 }
@@ -126,8 +153,10 @@ is_program_data <- function(data) {
 #' Turn a program into plotting data
 #'
 #' One row per step: the columns of [steps()], plus `track` (a factor in
-#' authored order), `lane` (the same, reversed, so the first track is drawn
-#' at the top), and `range_min` / `range_max` (a variable step's shortest
+#' authored order), the lane factors `lane` (by track), `step_lane` and
+#' `task_lane` (see `lanes` in [geom_rhylthyme()]; levels run bottom to top,
+#' so the first track or step is drawn at the top), and `range_min` /
+#' `range_max` (a variable step's shortest
 #' and longest end; `NA` otherwise). The program itself rides along as the
 #' `"rhylthyme_program"` attribute, for [geom_rhylthyme()]'s arrows and
 #' replicate collapsing.
@@ -147,14 +176,13 @@ fortify.rhylthyme_program <- function(model, data, ...) {
   out
 }
 
-# `track` and `lane` factors for the tracks present in `data`, in track order.
+# `track` (authored order) and the three lane factors (see lane_factor()) for
+# the steps in `data`.
 add_lanes <- function(data) {
-  tracks <- unique(data[c("track_id", "track_name", "track_index")])
-  tracks <- tracks[order(tracks$track_index), ]
-  label <- if (anyDuplicated(tracks$track_name)) tracks$track_id else tracks$track_name
-  key <- match(data$track_id, tracks$track_id)
-  data$track <- factor(label[key], levels = label)
-  data$lane <- factor(label[key], levels = rev(label))
+  data$lane <- lane_factor(data, "track")
+  data$track <- factor(as.character(data$lane), levels = rev(levels(data$lane)))
+  data$step_lane <- lane_factor(data, "step")
+  data$task_lane <- lane_factor(data, "task")
   data
 }
 
@@ -165,7 +193,7 @@ add_lanes <- function(data) {
 StatRhylthyme <- ggplot2::ggproto("StatRhylthyme", ggplot2::Stat,
   required_aes = c("xmin", "xmax", "y"),
   compute_panel = function(data, scales) {
-    layout_bars(data)
+    layout_bars(stack_overlaps(data))
   }
 )
 
@@ -183,7 +211,7 @@ GeomRhylthyme <- ggplot2::ggproto("GeomRhylthyme", ggplot2::Geom,
   # A stat other than StatRhylthyme (e.g. stat = "identity") leaves the bar
   # extents to the geom.
   setup_data = function(data, params) {
-    if (is.null(data$ymin) || is.null(data$ymax)) data <- layout_bars(data)
+    if (is.null(data$ymin) || is.null(data$ymax)) data <- layout_bars(stack_overlaps(data))
     data
   },
   draw_panel = function(self, data, panel_params, coord, lineend = "butt",
@@ -226,9 +254,9 @@ range_grob <- function(data, panel_params, coord) {
     ext$colour <- NA
     children <- c(children, list(ggplot2::GeomRect$draw_panel(ext, panel_params, coord)))
   }
-  lane_gap <- (r$ymax - r$ymin) / 0.8 * 0.1
-  y <- r$ymin - lane_gap / 2
-  cap <- lane_gap / 3
+  # Lanes are 1 unit apart and bars 0.8 high: the whisker sits mid-gap.
+  y <- r$ymin - 0.05
+  cap <- 0.1 / 3
   seg <- data.frame(
     x = c(r$xlower, r$xlower, r$xupper), xend = c(r$xupper, r$xlower, r$xupper),
     y = c(y, y - cap, y - cap), yend = c(y, y + cap, y + cap)
