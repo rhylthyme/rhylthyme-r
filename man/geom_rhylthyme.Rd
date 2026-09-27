@@ -13,6 +13,10 @@ geom_rhylthyme(
   stat = "rhylthyme",
   position = "identity",
   ...,
+  arrows = TRUE,
+  labels = TRUE,
+  dependencies = NULL,
+  label_size = 3,
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
@@ -79,6 +83,20 @@ to use \code{position_jitter()}, give the position as \code{"jitter"}.
 \item{...}{Other arguments passed on to \code{\link[ggplot2:layer]{ggplot2::layer()}}, such as
 \code{colour = "white"}.}
 
+\item{arrows}{Draw dependency arrows between lanes. Solid for a step that
+waits for another; dashed when it starts before the other ends (a
+negative offset); dotted for a step that runs only if the other aborts.}
+
+\item{labels}{Draw each bar's \code{label}: inside the bar when it fits, else
+just after it when the lane has room, else not at all.}
+
+\item{dependencies}{A data frame with \code{from_step}, \code{to_step} and
+\code{relation} (and \code{offset}), as \code{\link[=dependencies]{dependencies()}} returns, matched to the
+\code{step} aesthetic. Taken from the program when the plot's data is one.}
+
+\item{label_size}{Label text size, in mm (as \code{\link[ggplot2:geom_text]{ggplot2::geom_text()}}'s
+\code{size}).}
+
 \item{na.rm}{If \code{FALSE}, the default, steps with no computed time are
 removed with a warning; if \code{TRUE}, silently.}
 
@@ -113,14 +131,22 @@ A layer to add to a plot.
 }
 \description{
 \code{geom_rhylthyme()} draws one bar per step, from its start to its end, in
-one lane per track. With a program as the plot's data
+one lane per track, with arrows for dependencies between lanes and step
+names on (or beside) the bars. With a program as the plot's data
 (\code{ggplot(program) + geom_rhylthyme()}), the aesthetics default to
-\code{xmin = start}, \code{xmax = end}, \code{y = lane} and \code{fill = track}; anything you
-map yourself, in the plot or the layer, wins. The geom also works by name:
-\code{geom = "rhylthyme"}.
+\code{xmin = start}, \code{xmax = end}, \code{y = lane}, \code{fill = track}, \code{step = step_id}
+and \code{label = name}, and the arrows come from the program's
+\code{\link[=dependencies]{dependencies()}}; anything you map or pass yourself wins. The geom also
+works by name: \code{geom = "rhylthyme"}.
+}
+\details{
+Aesthetics: \code{xmin}, \code{xmax} and \code{y} (required); \code{fill}, \code{colour}, \code{alpha},
+\code{linewidth}, \code{linetype}; \code{label} (the text for each bar) and \code{step} (the
+id the \code{dependencies} table refers to).
 }
 \examples{
 library(ggplot2)
 p <- read_rhylthyme(system.file("extdata", "breakfast_schedule.json", package = "rhylthyme"))
 ggplot(p) + geom_rhylthyme()
+ggplot(p) + geom_rhylthyme(labels = FALSE)
 }

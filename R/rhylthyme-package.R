@@ -3,4 +3,4 @@
 "_PACKAGE"
 
 # Column names used in default aesthetics.
-globalVariables(c("start", "end", "lane", "track"))
+globalVariables(c("start", "end", "lane", "track", "step_id", "name"))
