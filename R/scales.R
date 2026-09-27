@@ -15,6 +15,9 @@
 #'   (h:mm)" unless you give a title.
 #' * `scale_x_rhylthyme_clock()`: clock times, for an anchored program; a
 #'   [ggplot2::scale_x_datetime()] titled "Clock time".
+#' * `scale_y_rhylthyme()`: the lanes, labelled by track, step or task name
+#'   (within a set of [rhylthyme_programs()] each program's lanes are its
+#'   own even when names repeat).
 #'
 #' @param palette A palette name: one of `names(rhylthyme_palettes())`.
 #' @param name,breaks,labels,... Passed on to the underlying ggplot2 scale.
@@ -103,6 +106,15 @@ plain_sec_title <- function(parent, self, ...) {
 
 #' @rdname rhylthyme_scales
 #' @export
+scale_y_rhylthyme <- function(...) {
+  ggplot2::scale_y_discrete(labels = lane_labels, ...)
+}
+
+# Within a set of programs each lane is keyed "program<TAB>name"; show the name.
+lane_labels <- function(breaks) sub("^.*\t", "", breaks)
+
+#' @rdname rhylthyme_scales
+#' @export
 scale_x_rhylthyme_clock <- function(name = ggplot2::waiver(), ...) {
   parent <- ggplot2::scale_x_datetime(name = name, ...)
   ggplot2::ggproto(NULL, parent,
@@ -169,3 +181,6 @@ scale_type.rhylthyme_clock <- function(x) c("rhylthyme_clock", "datetime")
 
 #' @exportS3Method ggplot2::scale_type
 scale_type.rhylthyme_track <- function(x) c("rhylthyme", "discrete")
+
+#' @exportS3Method ggplot2::scale_type
+scale_type.rhylthyme_lane <- function(x) c("rhylthyme", "discrete")

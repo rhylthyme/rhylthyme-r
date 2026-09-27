@@ -2,12 +2,15 @@
 % Please edit documentation in R/ggplot.R
 \name{fortify.rhylthyme_program}
 \alias{fortify.rhylthyme_program}
-\title{Turn a program into plotting data}
+\alias{fortify.rhylthyme_programs}
+\title{Turn programs into plotting data}
 \usage{
 \method{fortify}{rhylthyme_program}(model, data, ...)
+
+\method{fortify}{rhylthyme_programs}(model, data, ...)
 }
 \arguments{
-\item{model}{A \code{rhylthyme_program}.}
+\item{model}{A \code{rhylthyme_program} or \code{\link[=rhylthyme_programs]{rhylthyme_programs()}}.}
 
 \item{data}{Ignored.}
 
@@ -17,16 +20,20 @@
 A data frame.
 }
 \description{
-One row per step: the columns of \code{\link[=steps]{steps()}}, plus \code{track} (a factor in
-authored order), the lane factors \code{lane} (by track), \code{step_lane} and
-\code{task_lane} (see \code{lanes} in \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}; levels run bottom to top,
-so the first track or step is drawn at the top), and \code{range_min} /
-\code{range_max} (a variable step's shortest
-and longest end; \code{NA} otherwise). \code{start}, \code{end} and the ranges are seconds
-from program start, or clock times for a program read with \code{start_at} /
+One row per step: the columns of \code{\link[=steps]{steps()}}, plus \code{program} (a factor, for
+faceting), \code{step_key} (the step id, prefixed by the program within a set
+of programs, so it is unique), \code{track} (a factor in authored order; tracks
+with the same name share a level, and a colour), the lane factors \code{lane}
+(by track), \code{step_lane} and \code{task_lane} (see \code{lanes} in
+\code{\link[=geom_rhylthyme]{geom_rhylthyme()}}; levels run bottom to top so the first track or step
+is drawn at the top, and within a set each program's lanes are its own),
+and \code{range_min} / \code{range_max} (a variable step's shortest and longest
+end; \code{NA} otherwise). \code{start}, \code{end} and the ranges are seconds from
+program start, or clock times for programs read with \code{start_at} /
 \code{finish_at}; they carry a class that makes ggplot2 use
 \code{\link[=scale_x_rhylthyme]{scale_x_rhylthyme()}} (or \code{\link[=scale_x_rhylthyme_clock]{scale_x_rhylthyme_clock()}}) by default, as
-\code{track} does for \code{\link[=scale_fill_rhylthyme]{scale_fill_rhylthyme()}}. The program itself rides along as the
+\code{track} does for \code{\link[=scale_fill_rhylthyme]{scale_fill_rhylthyme()}} and the lanes for
+\code{\link[=scale_y_rhylthyme]{scale_y_rhylthyme()}}. The program rides along as the
 \code{"rhylthyme_program"} attribute, for \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}'s arrows and
 replicate collapsing.
 }

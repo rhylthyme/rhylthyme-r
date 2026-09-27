@@ -84,7 +84,7 @@ stat_rhylthyme <- function(mapping = NULL, data = NULL, geom = "rhylthyme",
 rhylthyme_layer <- function(mapping, data, stat, geom, position, na.rm,
                             show.legend, inherit.aes, lanes = "track",
                             lanes_given = FALSE, collapse_replicates = FALSE, ...) {
-  if (inherits(data, "rhylthyme_program")) data <- ggplot2::fortify(data)
+  if (inherits(data, c("rhylthyme_program", "rhylthyme_programs"))) data <- ggplot2::fortify(data)
   params <- list(na.rm = na.rm, ...)
   params <- params[!vapply(params, is.null, logical(1))]
   layer <- ggplot2::layer(
@@ -105,13 +105,13 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
   layer <- object$layer
   data <- if (is.data.frame(object$data)) object$data else plot$data
   program <- attr(data, "rhylthyme_program")
-  if (is_program_data(data) && inherits(program, "rhylthyme_program")) {
+  if (is_program_data(data) && inherits(program, c("rhylthyme_program", "rhylthyme_programs"))) {
     mine <- as.list(layer$mapping %||% ggplot2::aes())
     inherited <- if (isTRUE(object$inherit.aes)) as.list(plot$mapping %||% ggplot2::aes()) else list()
     # x = start is not drawn (bars use xmin/xmax); it lets ggplot2 pick the
     # program's time scale (see scale_type.rhylthyme_elapsed).
     defaults <- as.list(ggplot2::aes(
-      x = start, xmin = start, xmax = end, fill = track, step = step_id, label = name,
+      x = start, xmin = start, xmax = end, fill = track, step = step_key, label = name,
       xlower = range_min, xupper = range_max, estimate = estimate
     ))
     defaults$y <- as.list(switch(object$lanes %||% "track",
@@ -128,12 +128,9 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
     if (length(missing)) {
       layer$mapping <- ggplot2::aes(!!!c(mine, defaults[missing]))
     }
-    dependencies <- program$dependencies
-    if (isTRUE(object$collapse_replicates)) {
-      collapsed <- collapse_replicates(plot_frame(program), program)
-      layer$data <- finish_plot_data(collapsed$data, program)
-      dependencies <- collapsed$dependencies
-    }
+    prepared <- plot_data(program, collapse = isTRUE(object$collapse_replicates))
+    if (isTRUE(object$collapse_replicates)) layer$data <- prepared$data
+    dependencies <- prepared$dependencies
     if (is.null(layer$geom_params$dependencies) && "dependencies" %in% layer$geom$parameters()) {
       layer$geom_params$dependencies <- dependencies
     }
@@ -149,32 +146,38 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
 }
 
 is_program_data <- function(data) {
-  is.data.frame(data) && all(c("step_id", "start", "end", "lane", "track") %in% names(data))
+  is.data.frame(data) && all(c("step_key", "start", "end", "lane", "track") %in% names(data))
 }
 
-#' Turn a program into plotting data
+#' Turn programs into plotting data
 #'
-#' One row per step: the columns of [steps()], plus `track` (a factor in
-#' authored order), the lane factors `lane` (by track), `step_lane` and
-#' `task_lane` (see `lanes` in [geom_rhylthyme()]; levels run bottom to top,
-#' so the first track or step is drawn at the top), and `range_min` /
-#' `range_max` (a variable step's shortest
-#' and longest end; `NA` otherwise). `start`, `end` and the ranges are seconds
-#' from program start, or clock times for a program read with `start_at` /
+#' One row per step: the columns of [steps()], plus `program` (a factor, for
+#' faceting), `step_key` (the step id, prefixed by the program within a set
+#' of programs, so it is unique), `track` (a factor in authored order; tracks
+#' with the same name share a level, and a colour), the lane factors `lane`
+#' (by track), `step_lane` and `task_lane` (see `lanes` in
+#' [geom_rhylthyme()]; levels run bottom to top so the first track or step
+#' is drawn at the top, and within a set each program's lanes are its own),
+#' and `range_min` / `range_max` (a variable step's shortest and longest
+#' end; `NA` otherwise). `start`, `end` and the ranges are seconds from
+#' program start, or clock times for programs read with `start_at` /
 #' `finish_at`; they carry a class that makes ggplot2 use
 #' [scale_x_rhylthyme()] (or [scale_x_rhylthyme_clock()]) by default, as
-#' `track` does for [scale_fill_rhylthyme()]. The program itself rides along as the
+#' `track` does for [scale_fill_rhylthyme()] and the lanes for
+#' [scale_y_rhylthyme()]. The program rides along as the
 #' `"rhylthyme_program"` attribute, for [geom_rhylthyme()]'s arrows and
 #' replicate collapsing.
 #'
-#' @param model A `rhylthyme_program`.
+#' @param model A `rhylthyme_program` or [rhylthyme_programs()].
 #' @param data Ignored.
 #' @param ... Ignored.
 #' @return A data frame.
 #' @exportS3Method ggplot2::fortify
-fortify.rhylthyme_program <- function(model, data, ...) {
-  finish_plot_data(plot_frame(model), model)
-}
+fortify.rhylthyme_program <- function(model, data, ...) plot_data(model)$data
+
+#' @rdname fortify.rhylthyme_program
+#' @exportS3Method ggplot2::fortify
+fortify.rhylthyme_programs <- function(model, data, ...) plot_data(model)$data
 
 # The steps table plus each variable step's range, in plain seconds.
 plot_frame <- function(model) {
@@ -183,22 +186,6 @@ plot_frame <- function(model) {
   out$range_min <- ifelse(ranged, out$start + out$min_seconds, NA_real_)
   out$range_max <- ifelse(ranged, out$start + out$max_seconds, NA_real_)
   out
-}
-
-# Lanes, the track factor, and times as elapsed seconds or clock times (with
-# the classes that pick the default scales), for plotting.
-finish_plot_data <- function(data, model) {
-  data$lane <- lane_factor(data, "track")
-  data$track <- structure(
-    factor(as.character(data$lane), levels = rev(levels(data$lane))),
-    class = c("rhylthyme_track", "factor")
-  )
-  data$step_lane <- lane_factor(data, "step")
-  data$task_lane <- lane_factor(data, "task")
-  as_time <- if (is.null(model$start_at)) elapsed else function(s) clock(s, model$start_at)
-  for (col in c("start", "end", "range_min", "range_max")) data[[col]] <- as_time(data[[col]])
-  attr(data, "rhylthyme_program") <- model
-  data
 }
 
 #' @rdname geom_rhylthyme

@@ -39,6 +39,14 @@ where steps that use a resource at the same time stack up:
 ggplot(p) + geom_rhylthyme(lanes = "task", aes(fill = task))
 ```
 
+Several programs plot together, one panel each (`c(p1, p2)` or
+`rhylthyme_programs(Saturday = p1, Sunday = p2)`; `steps()` and friends
+stack with a `program` column):
+
+```r
+autoplot(c(Saturday = p, Sunday = p))
+```
+
 The program is also plain data:
 
 ```r

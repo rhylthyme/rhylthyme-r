@@ -6,6 +6,7 @@
 \alias{scale_colour_rhylthyme}
 \alias{scale_color_rhylthyme}
 \alias{scale_x_rhylthyme}
+\alias{scale_y_rhylthyme}
 \alias{scale_x_rhylthyme_clock}
 \title{Scales for Rhylthyme plots}
 \usage{
@@ -21,6 +22,8 @@ scale_x_rhylthyme(
   labels = ggplot2::waiver(),
   ...
 )
+
+scale_y_rhylthyme(...)
 
 scale_x_rhylthyme_clock(name = ggplot2::waiver(), ...)
 }
@@ -52,6 +55,9 @@ minutes, 1 or 2 hours, ...). Titled "Elapsed (m:ss)" or "Elapsed
 (h:mm)" unless you give a title.
 \item \code{scale_x_rhylthyme_clock()}: clock times, for an anchored program; a
 \code{\link[ggplot2:scale_x_datetime]{ggplot2::scale_x_datetime()}} titled "Clock time".
+\item \code{scale_y_rhylthyme()}: the lanes, labelled by track, step or task name
+(within a set of \code{\link[=rhylthyme_programs]{rhylthyme_programs()}} each program's lanes are its
+own even when names repeat).
 }
 }
 \examples{
