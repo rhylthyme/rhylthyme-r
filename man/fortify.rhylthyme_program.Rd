@@ -22,7 +22,11 @@ authored order), the lane factors \code{lane} (by track), \code{step_lane} and
 \code{task_lane} (see \code{lanes} in \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}; levels run bottom to top,
 so the first track or step is drawn at the top), and \code{range_min} /
 \code{range_max} (a variable step's shortest
-and longest end; \code{NA} otherwise). The program itself rides along as the
+and longest end; \code{NA} otherwise). \code{start}, \code{end} and the ranges are seconds
+from program start, or clock times for a program read with \code{start_at} /
+\code{finish_at}; they carry a class that makes ggplot2 use
+\code{\link[=scale_x_rhylthyme]{scale_x_rhylthyme()}} (or \code{\link[=scale_x_rhylthyme_clock]{scale_x_rhylthyme_clock()}}) by default, as
+\code{track} does for \code{\link[=scale_fill_rhylthyme]{scale_fill_rhylthyme()}}. The program itself rides along as the
 \code{"rhylthyme_program"} attribute, for \code{\link[=geom_rhylthyme]{geom_rhylthyme()}}'s arrows and
 replicate collapsing.
 }

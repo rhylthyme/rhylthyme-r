@@ -108,8 +108,10 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
   if (is_program_data(data) && inherits(program, "rhylthyme_program")) {
     mine <- as.list(layer$mapping %||% ggplot2::aes())
     inherited <- if (isTRUE(object$inherit.aes)) as.list(plot$mapping %||% ggplot2::aes()) else list()
+    # x = start is not drawn (bars use xmin/xmax); it lets ggplot2 pick the
+    # program's time scale (see scale_type.rhylthyme_elapsed).
     defaults <- as.list(ggplot2::aes(
-      xmin = start, xmax = end, fill = track, step = step_id, label = name,
+      x = start, xmin = start, xmax = end, fill = track, step = step_id, label = name,
       xlower = range_min, xupper = range_max, estimate = estimate
     ))
     defaults$y <- as.list(switch(object$lanes %||% "track",
@@ -128,8 +130,8 @@ ggplot_add.rhylthyme_layer <- function(object, plot, ...) {
     }
     dependencies <- program$dependencies
     if (isTRUE(object$collapse_replicates)) {
-      collapsed <- collapse_replicates(data, program)
-      layer$data <- add_lanes(collapsed$data)
+      collapsed <- collapse_replicates(plot_frame(program), program)
+      layer$data <- finish_plot_data(collapsed$data, program)
       dependencies <- collapsed$dependencies
     }
     if (is.null(layer$geom_params$dependencies) && "dependencies" %in% layer$geom$parameters()) {
@@ -157,7 +159,11 @@ is_program_data <- function(data) {
 #' `task_lane` (see `lanes` in [geom_rhylthyme()]; levels run bottom to top,
 #' so the first track or step is drawn at the top), and `range_min` /
 #' `range_max` (a variable step's shortest
-#' and longest end; `NA` otherwise). The program itself rides along as the
+#' and longest end; `NA` otherwise). `start`, `end` and the ranges are seconds
+#' from program start, or clock times for a program read with `start_at` /
+#' `finish_at`; they carry a class that makes ggplot2 use
+#' [scale_x_rhylthyme()] (or [scale_x_rhylthyme_clock()]) by default, as
+#' `track` does for [scale_fill_rhylthyme()]. The program itself rides along as the
 #' `"rhylthyme_program"` attribute, for [geom_rhylthyme()]'s arrows and
 #' replicate collapsing.
 #'
@@ -167,22 +173,31 @@ is_program_data <- function(data) {
 #' @return A data frame.
 #' @exportS3Method ggplot2::fortify
 fortify.rhylthyme_program <- function(model, data, ...) {
+  finish_plot_data(plot_frame(model), model)
+}
+
+# The steps table plus each variable step's range, in plain seconds.
+plot_frame <- function(model) {
   out <- model$steps
   ranged <- !is.na(out$min_seconds) & !is.na(out$max_seconds) & out$max_seconds > out$min_seconds
   out$range_min <- ifelse(ranged, out$start + out$min_seconds, NA_real_)
   out$range_max <- ifelse(ranged, out$start + out$max_seconds, NA_real_)
-  out <- add_lanes(out)
-  attr(out, "rhylthyme_program") <- model
   out
 }
 
-# `track` (authored order) and the three lane factors (see lane_factor()) for
-# the steps in `data`.
-add_lanes <- function(data) {
+# Lanes, the track factor, and times as elapsed seconds or clock times (with
+# the classes that pick the default scales), for plotting.
+finish_plot_data <- function(data, model) {
   data$lane <- lane_factor(data, "track")
-  data$track <- factor(as.character(data$lane), levels = rev(levels(data$lane)))
+  data$track <- structure(
+    factor(as.character(data$lane), levels = rev(levels(data$lane))),
+    class = c("rhylthyme_track", "factor")
+  )
   data$step_lane <- lane_factor(data, "step")
   data$task_lane <- lane_factor(data, "task")
+  as_time <- if (is.null(model$start_at)) elapsed else function(s) clock(s, model$start_at)
+  for (col in c("start", "end", "range_min", "range_max")) data[[col]] <- as_time(data[[col]])
+  attr(data, "rhylthyme_program") <- model
   data
 }
 

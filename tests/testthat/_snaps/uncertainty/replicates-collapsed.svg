@@ -21,39 +21,38 @@
 <rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
 </g>
 <defs>
-  <clipPath id='cpOTguODR8NjA0Ljk3fDIyLjc4fDU1Ny43MQ=='>
-    <rect x='98.84' y='22.78' width='506.13' height='534.92' />
+  <clipPath id='cpOTguODR8NjA0Ljk3fDIyLjc4fDU0NS4xMQ=='>
+    <rect x='98.84' y='22.78' width='506.13' height='522.33' />
   </clipPath>
 </defs>
-<g clip-path='url(#cpOTguODR8NjA0Ljk3fDIyLjc4fDU1Ny43MQ==)'>
-<rect x='98.84' y='22.78' width='506.13' height='534.92' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='121.84' y='111.94' width='54.13' height='356.62' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #F8766D;' />
-<rect x='175.97' y='111.94' width='270.66' height='356.62' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #F8766D;' />
-<rect x='446.63' y='111.94' width='135.33' height='356.62' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #F8766D;' />
-<text x='125.24' y='293.18' style='font-size: 8.54px; fill: #1A1A1A; font-family: sans;' textLength='46.98px' lengthAdjust='spacingAndGlyphs'>Label Tubes</text>
-<text x='179.38' y='293.18' style='font-size: 8.54px; fill: #1A1A1A; font-family: sans;' textLength='51.49px' lengthAdjust='spacingAndGlyphs'>Centrifuge ×3</text>
-<text x='450.04' y='293.18' style='font-size: 8.54px; fill: #1A1A1A; font-family: sans;' textLength='49.83px' lengthAdjust='spacingAndGlyphs'>Run Analysis</text>
-<rect x='98.84' y='22.78' width='506.13' height='534.92' style='stroke-width: 1.07; stroke: #333333;' />
+<g clip-path='url(#cpOTguODR8NjA0Ljk3fDIyLjc4fDU0NS4xMQ==)'>
+<rect x='98.84' y='22.78' width='506.13' height='522.33' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='121.84' y='109.84' width='54.13' height='348.22' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #3B82F6;' />
+<rect x='175.97' y='109.84' width='270.66' height='348.22' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #3B82F6;' />
+<rect x='446.63' y='109.84' width='135.33' height='348.22' style='stroke-width: 1.07; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #3B82F6;' />
+<text x='125.24' y='286.89' style='font-size: 8.54px; fill: #FFFFFF; font-family: sans;' textLength='46.98px' lengthAdjust='spacingAndGlyphs'>Label Tubes</text>
+<text x='179.38' y='286.89' style='font-size: 8.54px; fill: #FFFFFF; font-family: sans;' textLength='51.49px' lengthAdjust='spacingAndGlyphs'>Centrifuge ×3</text>
+<text x='450.04' y='286.89' style='font-size: 8.54px; fill: #FFFFFF; font-family: sans;' textLength='49.83px' lengthAdjust='spacingAndGlyphs'>Run Analysis</text>
+<rect x='98.84' y='22.78' width='506.13' height='522.33' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
-<text x='93.90' y='293.27' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='75.83px' lengthAdjust='spacingAndGlyphs'>Sample Processing</text>
-<polyline points='96.10,290.24 98.84,290.24 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<polyline points='121.84,560.45 121.84,557.71 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<polyline points='234.62,560.45 234.62,557.71 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<polyline points='347.39,560.45 347.39,557.71 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<polyline points='460.17,560.45 460.17,557.71 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<polyline points='572.94,560.45 572.94,557.71 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text x='121.84' y='568.69' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
-<text x='234.62' y='568.69' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>250</text>
-<text x='347.39' y='568.69' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>500</text>
-<text x='460.17' y='568.69' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='14.68px' lengthAdjust='spacingAndGlyphs'>750</text>
-<text x='572.94' y='568.69' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
-<text transform='translate(13.05,290.24) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='20.80px' lengthAdjust='spacingAndGlyphs'>lane</text>
-<rect x='615.93' y='273.94' width='98.59' height='32.61' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<text x='615.93' y='282.65' style='font-size: 11.00px; font-family: sans;' textLength='23.85px' lengthAdjust='spacingAndGlyphs'>track</text>
-<rect x='615.93' y='289.27' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='615.93' y='289.27' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #F8766D;' />
-<text x='638.69' y='300.94' style='font-size: 8.80px; font-family: sans;' textLength='75.83px' lengthAdjust='spacingAndGlyphs'>Sample Processing</text>
+<text x='93.90' y='286.98' text-anchor='end' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='75.83px' lengthAdjust='spacingAndGlyphs'>Sample Processing</text>
+<polyline points='96.10,283.95 98.84,283.95 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
+<polyline points='121.84,547.85 121.84,545.11 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
+<polyline points='257.17,547.85 257.17,545.11 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
+<polyline points='392.50,547.85 392.50,545.11 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
+<polyline points='527.83,547.85 527.83,545.11 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
+<text x='121.84' y='556.10' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='17.13px' lengthAdjust='spacingAndGlyphs'>0:00</text>
+<text x='257.17' y='556.10' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='17.13px' lengthAdjust='spacingAndGlyphs'>5:00</text>
+<text x='392.50' y='556.10' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='22.02px' lengthAdjust='spacingAndGlyphs'>10:00</text>
+<text x='527.83' y='556.10' text-anchor='middle' style='font-size: 8.80px; fill: #4D4D4D; font-family: sans;' textLength='22.02px' lengthAdjust='spacingAndGlyphs'>15:00</text>
+<text x='351.90' y='568.24' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='73.37px' lengthAdjust='spacingAndGlyphs'>Elapsed (m:ss)</text>
+<text transform='translate(13.05,283.95) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: sans;' textLength='20.80px' lengthAdjust='spacingAndGlyphs'>lane</text>
+<rect x='615.93' y='267.64' width='98.59' height='32.61' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<text x='615.93' y='276.35' style='font-size: 11.00px; font-family: sans;' textLength='23.85px' lengthAdjust='spacingAndGlyphs'>track</text>
+<rect x='615.93' y='282.97' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='615.93' y='282.97' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #3B82F6;' />
+<text x='638.69' y='294.64' style='font-size: 8.80px; font-family: sans;' textLength='75.83px' lengthAdjust='spacingAndGlyphs'>Sample Processing</text>
 <text x='98.84' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='115.95px' lengthAdjust='spacingAndGlyphs'>replicates collapsed</text>
 </g>
 </svg>

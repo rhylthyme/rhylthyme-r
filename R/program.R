@@ -11,8 +11,9 @@
 #'   `estimate` (the planned length is a guess: instrument steps with no
 #'   duration, indefinite steps, and durations `rhylthyme plan` filled in),
 #'   `trigger_type`, and for a replicate instance `instance_of` (the
-#'   authored step) and `instance_index`. `as.data.frame()` and `tidy()` give
-#'   the same table.
+#'   authored step) and `instance_index`. For a program read with
+#'   `start_at` or `finish_at`, also `start_time` and `end_time` (POSIXct).
+#'   `as.data.frame()` and `tidy()` give the same table.
 #' * `tracks()`: one row per track as the engine lays them out (replicate and
 #'   template tracks included): `track_id`, `name`, `track_index`,
 #'   `parent_track_id`, `template_id`, `n_steps`, `start`, `end`.
@@ -53,7 +54,14 @@ dependencies <- function(x, ...) UseMethod("dependencies")
 resources <- function(x, ...) UseMethod("resources")
 
 #' @export
-steps.rhylthyme_program <- function(x, ...) x$steps
+steps.rhylthyme_program <- function(x, ...) {
+  out <- x$steps
+  if (!is.null(x$start_at)) {
+    out$start_time <- x$start_at + out$start
+    out$end_time <- x$start_at + out$end
+  }
+  out
+}
 
 #' @export
 tracks.rhylthyme_program <- function(x, ...) {
@@ -127,6 +135,10 @@ print.rhylthyme_program <- function(x, ...) {
     "<rhylthyme_program> %s: %d tracks, %d steps, %s\n",
     x$name, nrow(x$tracks), nrow(x$steps), format_elapsed(makespan(x))
   ))
+  if (!is.null(x$start_at)) {
+    cat(sprintf("Runs %s to %s\n", format(x$start_at, "%Y-%m-%d %H:%M"),
+                format(x$start_at + makespan(x), "%H:%M")))
+  }
   invisible(x)
 }
 

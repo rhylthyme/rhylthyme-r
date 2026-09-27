@@ -4,7 +4,7 @@
 \alias{read_rhylthyme}
 \title{Read a Rhylthyme program}
 \usage{
-read_rhylthyme(x, validate = TRUE)
+read_rhylthyme(x, validate = TRUE, start_at = NULL, finish_at = NULL)
 }
 \arguments{
 \item{x}{The program: a path to a JSON file, an \verb{http(s)://} URL, a JSON
@@ -16,12 +16,19 @@ length-one vector becomes a JSON scalar, so wrap a one-element array in
 an error listing every problem (see \code{\link[=validate_rhylthyme]{validate_rhylthyme()}}). \code{FALSE}
 reads it anyway, for drafts; steps are then timed as far as the engine
 can.}
+
+\item{start_at, finish_at}{Anchor the program to the clock: when it starts,
+or when its last step should end ("everything ready at 6 pm"). A
+\code{POSIXct} or a string \code{\link[=as.POSIXct]{as.POSIXct()}} understands, in the local time zone.
+Give one at most. \code{\link[=steps]{steps()}} then adds \code{start_time} and \code{end_time}, and
+plots have a clock-time axis.}
 }
 \value{
 A \code{rhylthyme_program}: a list with the program's \code{name},
 \code{description}, \code{schema_version} and \code{source}, the \code{steps}, \code{tracks} and
 \code{dependencies} tables (see \code{\link[=steps]{steps()}}), the parsed \code{program} and its
-\code{json} text. Times are seconds from program start.
+\code{json} text, and \code{start_at} when anchored. Times are seconds from
+program start.
 }
 \description{
 Reads a Rhylthyme program (JSON), checks it against the program schema and
@@ -34,4 +41,8 @@ read_rhylthyme('{"programId": "tea", "name": "Tea", "resourceConstraints": [],
   "tracks": [{"trackId": "kettle", "name": "Kettle",
   "steps": [{"stepId": "boil", "name": "Boil", "duration": {"type": "fixed", "seconds": 180},
   "startTrigger": {"type": "programStart"}}]}]}')
+# Everything ready at 6 pm
+p <- read_rhylthyme(system.file("extdata", "breakfast_schedule.json", package = "rhylthyme"),
+  finish_at = "2026-11-26 18:00")
+steps(p)[c("name", "start_time", "end_time")]
 }

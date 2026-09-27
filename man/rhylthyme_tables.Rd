@@ -46,8 +46,9 @@ place the step), \code{duration_type} (\code{fixed}, \code{variable}, \code{inde
 \code{estimate} (the planned length is a guess: instrument steps with no
 duration, indefinite steps, and durations \verb{rhylthyme plan} filled in),
 \code{trigger_type}, and for a replicate instance \code{instance_of} (the
-authored step) and \code{instance_index}. \code{as.data.frame()} and \code{tidy()} give
-the same table.
+authored step) and \code{instance_index}. For a program read with
+\code{start_at} or \code{finish_at}, also \code{start_time} and \code{end_time} (POSIXct).
+\code{as.data.frame()} and \code{tidy()} give the same table.
 \item \code{tracks()}: one row per track as the engine lays them out (replicate and
 template tracks included): \code{track_id}, \code{name}, \code{track_index},
 \code{parent_track_id}, \code{template_id}, \code{n_steps}, \code{start}, \code{end}.

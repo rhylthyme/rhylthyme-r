@@ -21,7 +21,7 @@ test_that("mappings the user gives win over the program defaults", {
   p <- read_rhylthyme(example_program())
   plot <- ggplot2::ggplot(p, ggplot2::aes(fill = name)) + geom_rhylthyme()
   mapped <- names(plot$layers[[1]]$mapping)
-  expect_setequal(mapped, c("xmin", "xmax", "y", "step", "label", "xlower", "xupper", "estimate"))
+  expect_setequal(mapped, c("x", "xmin", "xmax", "y", "step", "label", "xlower", "xupper", "estimate"))
   plot <- ggplot2::ggplot(p) + geom_rhylthyme(ggplot2::aes(y = name))
   expect_equal(rlang::as_label(plot$layers[[1]]$mapping$y), "name")
 })
