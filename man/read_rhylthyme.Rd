@@ -19,9 +19,9 @@ can.}
 }
 \value{
 A \code{rhylthyme_program}: a list with the program's \code{name},
-\code{description}, \code{schema_version}, \code{source}, a \code{steps} data frame (one row
-per step, with \code{start} and \code{end} in seconds from program start), the
-parsed \code{program} and its \code{json} text.
+\code{description}, \code{schema_version} and \code{source}, the \code{steps}, \code{tracks} and
+\code{dependencies} tables (see \code{\link[=steps]{steps()}}), the parsed \code{program} and its
+\code{json} text. Times are seconds from program start.
 }
 \description{
 Reads a Rhylthyme program (JSON), checks it against the program schema and

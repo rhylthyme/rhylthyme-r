@@ -12,9 +12,9 @@
 #'   reads it anyway, for drafts; steps are then timed as far as the engine
 #'   can.
 #' @return A `rhylthyme_program`: a list with the program's `name`,
-#'   `description`, `schema_version`, `source`, a `steps` data frame (one row
-#'   per step, with `start` and `end` in seconds from program start), the
-#'   parsed `program` and its `json` text.
+#'   `description`, `schema_version` and `source`, the `steps`, `tracks` and
+#'   `dependencies` tables (see [steps()]), the parsed `program` and its
+#'   `json` text. Times are seconds from program start.
 #' @examples
 #' p <- read_rhylthyme(system.file("extdata", "breakfast_schedule.json", package = "rhylthyme"))
 #' p
@@ -88,37 +88,21 @@ parse_program <- function(json) {
 }
 
 new_rhylthyme_program <- function(json, program, source) {
+  tables <- engine_describe(json)
   structure(
     list(
       name = program$name %||% program$programId %||% NA_character_,
       description = program$description %||% NA_character_,
       schema_version = program$schemaVersion %||% NA_character_,
       source = source,
-      steps = engine_steps(json),
+      steps = tables$steps,
+      tracks = tables$tracks,
+      dependencies = tables$dependencies,
       program = program,
       json = json
     ),
     class = "rhylthyme_program"
   )
-}
-
-#' @export
-print.rhylthyme_program <- function(x, ...) {
-  steps <- x$steps
-  total <- if (nrow(steps)) max(steps$end, na.rm = TRUE) else 0
-  cat(sprintf(
-    "<rhylthyme_program> %s: %d tracks, %d steps, %s\n",
-    x$name, length(unique(steps$track_id)), nrow(steps), format_elapsed(total)
-  ))
-  invisible(x)
-}
-
-format_elapsed <- function(seconds) {
-  seconds <- round(seconds)
-  h <- seconds %/% 3600
-  m <- (seconds %% 3600) %/% 60
-  s <- seconds %% 60
-  ifelse(h > 0, sprintf("%d:%02d:%02d", h, m, s), sprintf("%d:%02d", m, s))
 }
 
 `%||%` <- function(a, b) if (is.null(a)) b else a

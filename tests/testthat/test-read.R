@@ -8,8 +8,8 @@ test_that("read_rhylthyme times every step with the engine", {
   expect_equal(s$step_id, c("eggs-crack-whisk", "eggs-heat-pan", "eggs-cook",
                             "bacon-prep", "bacon-cook", "toast-cook"))
   # The engine's times for this fixture (rhylthyme-timeline's
-  # test/fixtures/python-timings.json): a variable step plans at its
-  # defaultSeconds, and toast waits for the bacon with a negative offset.
+  # test/fixtures/engine-timings.json): a variable step plans at its
+  # defaultSeconds, and toast starts 8 minutes after program start.
   expect_equal(s$start, c(0, 60, 150, 0, 60, 480))
   expect_equal(s$end, c(60, 150, 300, 60, 660, 690))
   expect_equal(s$duration, s$end - s$start)

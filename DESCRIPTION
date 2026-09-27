@@ -15,12 +15,14 @@ Depends:
     R (>= 4.1)
 Imports:
     curl,
+    generics,
     ggplot2 (>= 3.5.0),
     jsonlite,
     jsonvalidate,
     utils,
     V8
 Suggests:
+    dplyr,
     testthat (>= 3.0.0),
     rlang,
     vdiffr,

@@ -20,6 +20,19 @@ p
 ggplot(p) + geom_rhylthyme(colour = "white")
 ```
 
+The program is also plain data:
+
+```r
+summary(p)       # tracks, resources, makespan
+steps(p)         # one row per step: start/end (seconds), task, duration type, estimate, ...
+dependencies(p)  # which step waits on which, with offsets
+tracks(p)
+resources(p)
+```
+
+`validate_rhylthyme()` lists schema problems by step; `read_rhylthyme()`
+also takes a URL, a JSON string or a list.
+
 The geom also works by name, on any data with start, end and lane columns:
 
 ```r
