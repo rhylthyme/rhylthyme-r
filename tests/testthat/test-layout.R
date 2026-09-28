@@ -58,16 +58,21 @@ test_that("a forward hop is a Bezier that leaves level and sweeps into the bar",
   expect_equal(far$x[2] - far$x[1], 120 / 96)
 })
 
-test_that("a short hop or a hand-off is an S-curve between the facing edges", {
-  c <- arrow_curves(anchors(x0 = 1, x1 = 1.2))
+test_that("a short hop or a hand-off curves from the bar's end onto the waiting bar", {
+  # no gap: leaves a's end level with its centre, bends down onto b's top edge
+  c <- arrow_curves(anchors(x0 = 1, x1 = 1))
   expect_equal(unique(c$shape), "drop")
-  expect_equal(c$x, c(1, 1, 1.2, 1.2))
-  expect_equal(c$y[c(1, 4)], c(1.75, 1.25))
-  # handles reach half the vertical distance, at least 12 px
-  expect_equal(c$y[2], 1.75 - max(12 / 96, 0.25))
+  expect_equal(c$x[c(1, 4)], c(1, 1))
+  expect_equal(c$y[c(1, 4)], c(2, 1.25))
+  expect_gt(c$x[2], 1)                      # sweeps right: a curve, not a line
+  expect_equal(c$y[2], 2)                   # leaves level
+  expect_equal(c$x[3], 1)                   # arrives vertically
+  # a hand-off before the other ends still lands on the waiting bar's start
   back <- arrow_curves(anchors(x0 = 2, x1 = 1.5))
-  expect_equal(unique(back$shape), "drop")
   expect_equal(back$x[4], 1.5)
+  # start-to-start leaves leftwards, away from its own bar
+  a <- anchors(x0 = 1, x1 = 1.1); a$relation <- "start_to_start"
+  expect_lt(arrow_curves(a)$x[2], 1)
 })
 
 label_bars <- function() {

@@ -113,8 +113,9 @@ layout_arrows <- function(bars, dependencies) {
 # after the other's end) leaves the bar level with its centre and sweeps
 # into the waiting bar from the left, its handles reaching 60% of the gap
 # (clamped to `reach`). Anything shorter, or a hand-off before the other
-# step ends, is an S-curve from the edge facing the other lane into the
-# waiting bar's edge. Returns four rows per arrow (`arrow`, `x`, `y`, `shape`).
+# step ends, leaves the bar level with its centre and curves onto the
+# waiting bar's facing edge at its start. Returns four rows per arrow
+# (`arrow`, `x`, `y`, `shape`).
 arrow_curves <- function(a, threshold = 40 / 96, reach = c(28, 120) / 96,
                          reach_y = 12 / 96, gap = 3 / 96) {
   if (!nrow(a)) {
@@ -130,10 +131,19 @@ arrow_curves <- function(a, threshold = 40 / 96, reach = c(28, 120) / 96,
       y <- c(r$y0_mid, r$y0_mid, r$y1_mid, r$y1_mid)
       shape <- "forward"
     } else {
-      dir <- sign(r$y1_edge - r$y0_edge)
-      h <- max(reach_y, abs(r$y1_edge - r$y0_edge) * 0.5)
-      x <- c(r$x0, r$x0, r$x1, r$x1)
-      y <- c(r$y0_edge, r$y0_edge + dir * h, r$y1_edge - dir * h, r$y1_edge)
+      # Leave the bar level with its centre (rightwards from its end, or
+      # leftwards from its start for start_to_start, so the curve never
+      # crosses its own bar) and bend down (or up) onto the waiting bar's
+      # facing edge at its start. Curved even with no gap between the steps,
+      # and stacked bars get separate curves.
+      dy <- r$y1_edge - r$y0_mid
+      dir <- if (dy == 0) -1 else sign(dy)
+      # A compact hook, so long drops don't loop wide across the chart.
+      h <- min(max(abs(dy) * 0.3, 16 / 96), 48 / 96)
+      if (identical(r$relation, "start_to_start")) h <- -h
+      v <- max(reach_y, abs(dy) * 0.6)
+      x <- c(r$x0, r$x0 + h, r$x1, r$x1)
+      y <- c(r$y0_mid, r$y0_mid, r$y1_edge - dir * v, r$y1_edge)
       shape <- "drop"
     }
     data.frame(arrow = r$arrow, x = x, y = y, shape = shape, stringsAsFactors = FALSE)
