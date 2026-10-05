@@ -235,7 +235,7 @@
                 "required": ["attempt", "at", "code"],
                 "properties": {
                   "attempt": { "type": "integer", "minimum": 1 },
-                  "phase": { "enum": ["start", "call", "until", "end", "onAbort"], "description": "Which call this reply answers; absent in records written before phase actions (always the step's command)" },
+                  "phase": { "enum": ["start", "call", "until", "end", "onAbort", "pause", "resume"], "description": "Which call this reply answers (pause and resume: holding and continuing the tool's work while the schedule was paused); absent in records written before phase actions (always the step's command)" },
                   "tool": { "type": "string", "description": "Workcell tool the call went to (with phase)" },
                   "command": { "type": "string", "description": "The call's command (with phase)" },
                   "at": { "$ref": "#/definitions/seconds", "description": "Seconds from startedAt at which the reply arrived" },
