@@ -191,7 +191,7 @@
         "endedBy": {
           "type": "string",
           "enum": ["executor", "timer", "trigger", "abort", "instrument", "skipped"],
-          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted), instrument (a galago instrument reported its command finished), skipped (its instrument command failed and the operator marked it done)"
+          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted), instrument (the instrument replied to the step's command or until call), skipped (an instrument call failed and the operator marked it done)"
         },
         "triggerFiredAt": {
           "$ref": "#/definitions/seconds",
@@ -221,12 +221,12 @@
         },
         "instrument": {
           "type": "object",
-          "description": "For a step with a galago instrument command: the tool, the command, and every reply, one per attempt (retries included). Tool addresses are never recorded",
+          "description": "For a step with instrument calls: the step's tool, its command (or until command; empty when it has only start/end actions), and every reply, retries included. Replies to start, end and onAbort actions name their phase, tool and command. Tool addresses are never recorded",
           "additionalProperties": false,
           "required": ["tool", "command", "replies"],
           "properties": {
             "tool": { "type": "string", "description": "Workcell tool name, as in the program" },
-            "command": { "type": "string", "description": "galago command name" },
+            "command": { "type": "string", "description": "The step's command or until command (a galago command, a LabMCP tool, ...); empty when the step has only start/end actions" },
             "replies": {
               "type": "array",
               "items": {
@@ -235,8 +235,11 @@
                 "required": ["attempt", "at", "code"],
                 "properties": {
                   "attempt": { "type": "integer", "minimum": 1 },
+                  "phase": { "enum": ["start", "call", "until", "end", "onAbort"], "description": "Which call this reply answers; absent in records written before phase actions (always the step's command)" },
+                  "tool": { "type": "string", "description": "Workcell tool the call went to (with phase)" },
+                  "command": { "type": "string", "description": "The call's command (with phase)" },
                   "at": { "$ref": "#/definitions/seconds", "description": "Seconds from startedAt at which the reply arrived" },
-                  "code": { "type": "string", "description": "galago ResponseCode name (SUCCESS, DRIVER_ERROR, ...) or TIMEOUT, UNREACHABLE, NOT_SENT" },
+                  "code": { "type": "string", "description": "SUCCESS, or the driver's failure code (galago ResponseCode names such as DRIVER_ERROR; LabMCP TOOL_ERROR), or TIMEOUT, UNREACHABLE, NOT_SENT" },
                   "errorMessage": { "type": "string" },
                   "metadata": { "type": "object", "description": "Data the tool returned with its reply (e.g. plate reader values)" }
                 }
