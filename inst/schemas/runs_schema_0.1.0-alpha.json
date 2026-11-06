@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "W3C Time Ontology (OWL-Time) alignment: https://www.w3.org/TR/owl-time/ — namespace prefix time: = http://www.w3.org/2006/time#. A run record is the time:ProperInterval actually occupied by one execution of a program. Where the program schema describes planned intervals, this schema records observed ones: every time:Instant is a number of seconds from startedAt.",
+  "$comment": "W3C Time Ontology (OWL-Time) alignment: https://www.w3.org/TR/owl-time/ — namespace prefix time: = http://www.w3.org/2006/time#. A run record is the time:ProperInterval actually occupied by one execution of a program. Where the program schema describes planned intervals, this schema records observed ones: every time:Instant is a number of seconds from startedAt (in a media record, from the video's first frame).",
   "title": "Rhylthyme Run Record Schema",
   "description": "One JSON document per execution of a Rhylthyme program: the timings the program planned, frozen at run start, beside the timings that actually happened. Stored separately from the program so history never rewrites the plan.",
   "type": "object",
@@ -42,8 +42,8 @@
       "properties": {
         "kind": {
           "type": "string",
-          "enum": ["cli", "web"],
-          "description": "The runtime: the terminal runner (cli) or the browser player (web)"
+          "enum": ["cli", "web", "video"],
+          "description": "The runtime: the terminal runner (cli), the browser player (web), or video (a record made from a video by a dataset converter or the marking screen)"
         },
         "version": {
           "type": "string",
@@ -51,8 +51,8 @@
         },
         "clockMode": {
           "type": "string",
-          "enum": ["wall", "simulated"],
-          "description": "wall: actual times were measured against the wall clock (possibly scaled by speed); simulated: the runtime advanced its own clock, which may drift from wall time"
+          "enum": ["wall", "simulated", "media"],
+          "description": "wall: actual times were measured against the wall clock (possibly scaled by speed); simulated: the runtime advanced its own clock, which may drift from wall time; media: every time is seconds of the video's own media timeline, and program time 0 is the video's first frame"
         },
         "speed": {
           "type": "number",
@@ -69,8 +69,8 @@
     "startedAt": {
       "type": "string",
       "format": "date-time",
-      "$comment": "time:hasBeginning of the run interval — the time:Instant every other number in the record is measured from",
-      "description": "UTC instant at which the program clock started (ISO 8601). All step times are seconds from this instant"
+      "$comment": "time:hasBeginning of the run interval — the time:Instant every other number in the record is measured from, except in a media record, where they are measured from the video's first frame",
+      "description": "UTC instant at which the program clock started (ISO 8601). All step times are seconds from this instant, except in a media record (runtime.clockMode media): there startedAt is when recording began if known, otherwise when the timeline was made, and step times are seconds of the video's media timeline"
     },
     "endedAt": {
       "type": "string",
@@ -81,7 +81,7 @@
     "outcome": {
       "type": "string",
       "enum": ["completed", "aborted", "abandoned"],
-      "description": "completed: every step reached its end; aborted: at least one step was aborted; abandoned: the run ended before every step had ended (quit, interrupt, crash)"
+      "description": "completed: every step reached its end; aborted: at least one step was aborted; abandoned: the run ended before every step had ended (quit, interrupt, crash). In a media record, completed means the video shows the procedure to its end"
     },
     "context": {
       "type": "object",
@@ -112,7 +112,7 @@
     "seconds": {
       "type": "number",
       "minimum": 0,
-      "$comment": "A time:Instant expressed as a time:Duration from startedAt with time:unitType time:unitSecond"
+      "$comment": "A time:Instant expressed as a time:Duration from startedAt (in a media record, from the video's first frame) with time:unitType time:unitSecond"
     },
     "stepRecord": {
       "type": "object",
@@ -174,7 +174,7 @@
         "actual": {
           "type": "object",
           "$comment": "The time:ProperInterval the step actually occupied. Absent when the step never started; end absent when the run ended while the step was still running",
-          "description": "Observed timing. Absent if the step never started",
+          "description": "Observed timing. Absent if the step never started; in a media record, absent for a step that never happened in the video",
           "required": ["start"],
           "additionalProperties": false,
           "properties": {
@@ -190,8 +190,8 @@
         },
         "endedBy": {
           "type": "string",
-          "enum": ["executor", "timer", "trigger", "abort", "instrument", "skipped"],
-          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted), instrument (the instrument replied to the step's command or until call), skipped (an instrument call failed and the operator marked it done)"
+          "enum": ["executor", "timer", "trigger", "abort", "instrument", "skipped", "annotation", "observer"],
+          "description": "What ended the step: executor (a person marked it done — the only informative case for variable and indefinite steps), timer (its planned duration expired), trigger (another step's event ended it), abort (it was aborted), instrument (the instrument replied to the step's command or until call), skipped (an instrument call failed and the operator marked it done), annotation (a dataset label), observer (a person marking it while watching the video, including confirming a suggestion)"
         },
         "triggerFiredAt": {
           "$ref": "#/definitions/seconds",
@@ -211,7 +211,7 @@
         },
         "notes": {
           "type": "string",
-          "description": "Optional free text entered by the executor. Stripped before any public contribution"
+          "description": "Optional free text entered by the executor. Stripped before any public contribution. In a record made from a dataset, the dataset's error tags for the step and their descriptions"
         },
         "predictedAnchorSeconds": {
           "type": "number",

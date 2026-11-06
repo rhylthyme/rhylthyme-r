@@ -96,6 +96,64 @@ test_that("a run of another program warns; a broken record is refused", {
   expect_error(read_rhylthyme_run(list(steps = list())), "Not a Rhylthyme run record")
 })
 
+# The runs schema gained video timeline values on 2026-11-05: a record made
+# from a video has runtime kind "video" and clockMode "media" (times are
+# seconds into the video), and its steps are ended by "annotation" (a dataset
+# label) or "observer" (a person marking while watching).
+video_record <- function() {
+  record <- jsonlite::read_json(run_path())
+  record$runtime <- list(kind = "video", version = "0.1.0", clockMode = "media", speed = 1L)
+  record$endedAt <- NULL
+  record$steps[[1]]$endedBy <- "annotation"
+  record$steps[[1]]$notes <- "Measurement error: too little seasoning"
+  record$steps[[2]]$endedBy <- "observer"
+  # A step that never happened in the video has no actual and no ending.
+  record$steps[[3]]$actual <- NULL
+  record$steps[[3]]$endedBy <- NULL
+  record
+}
+
+test_that("a video timeline record is read: video runtime, media clock, label and observer ends", {
+  record <- video_record()
+  # validate = TRUE is the default: the record must pass the runs schema.
+  run <- read_rhylthyme_run(record, program = dinner())
+  s <- steps(run)
+  expect_equal(s$ended_by[1:3], c("annotation", "observer", NA))
+  expect_equal(s$status[1:4], c("completed", "completed", "not_started", "completed"))
+  expect_equal(s$start[1:2], c(record$steps[[1]]$actual$start, record$steps[[2]]$actual$start))
+  expect_equal(run$record$runtime$clockMode, "media")
+  expect_equal(run$outcome, "completed")
+})
+
+test_that("unknown runtime and endedBy values in a video record are still refused", {
+  bad <- list(
+    list(c("runtime", "kind"), "videos", "runtime.kind"),
+    list(c("runtime", "kind"), "Video", "runtime.kind"),
+    list(c("runtime", "clockMode"), "Media", "runtime.clockMode"),
+    list(c("runtime", "clockMode"), "frames", "runtime.clockMode"),
+    list(c("steps", "1", "endedBy"), "label", "steps[1].endedBy"),
+    list(c("steps", "2", "endedBy"), "Observer", "steps[2].endedBy")
+  )
+  # The unchanged record is valid, so each refusal is about the one value changed.
+  expect_s3_class(read_rhylthyme_run(video_record()), "rhylthyme_run")
+  for (b in bad) {
+    record <- video_record()
+    path <- b[[1]]
+    if (path[1] == "steps") {
+      record$steps[[as.integer(path[2])]][[path[3]]] <- b[[2]]
+    } else {
+      record[[path[1]]][[path[2]]] <- b[[2]]
+    }
+    expect_error(read_rhylthyme_run(record), class = "rhylthyme_invalid", info = b[[2]])
+    expect_error(read_rhylthyme_run(record), "run record is not valid (1 problem)", fixed = TRUE, info = b[[2]])
+    expect_error(
+      read_rhylthyme_run(record),
+      sprintf("record, %s: must be equal to one of the allowed values", b[[3]]),
+      fixed = TRUE, info = b[[2]]
+    )
+  }
+})
+
 test_that("a run plots its actual timeline, alone or with others", {
   run <- read_rhylthyme_run(run_path(), program = dinner())
   plot <- ggplot2::ggplot(run) + geom_rhylthyme()
